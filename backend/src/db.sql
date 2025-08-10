@@ -1,0 +1,54 @@
+
+create table users(
+    userId         varchar(36)  PRIMARY KEY, 
+    username       varchar(255), 
+    password       varchar(255), 
+    email          varchar(255)  unique, 
+    role           ENUM('admin', 'user'), 
+    created_at     TIMESTAMP DEFAULT   CURRENT_TIMESTAMP 
+)
+
+
+create table quizzes(
+    Id              varchar(36) PRIMARY KEY, 
+    creator_id      varchar(36), 
+    title           varchar(255), 
+    description     text, 
+    created_at      TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY     (creator_id)    REFERENCES users(userId)
+)
+
+create table questions(
+    Id              Int      AUTO_INCREMENT PRIMARY KEY, 
+    quiz_id         varchar(36), 
+    question_text   text, 
+    FOREIGN KEY     (quiz_id)   REFERENCES quizzes(Id)            
+)
+
+create table options(
+    Id              Int      AUTO_INCREMENT   PRIMARY KEY, 
+    question_id     Int, 
+    option_text     text, 
+    is_correct      Boolean,
+    FOREIGN KEY     (question_id)   REFERENCES questions(Id) 
+)
+
+create table submissions(
+    Id              varchar(36)    PRIMARY KEY, 
+    quiz_id         varchar(36), 
+    user_id         varchar(36), 
+    score           Int, 
+    submitted_at    TIMESTAMP  DEFAULT CURRENT_TIMESTAMP, 
+    FOREIGN KEY     (user_id)       REFERENCES users(userId), 
+    FOREIGN KEY     (quiz_id)       REFERENCES quizzes(Id)
+)
+
+create table answers(
+    Id              Int           AUTO_INCREMENT           PRIMARY KEY, 
+    question_id     Int, 
+    selection_option_id Int, 
+    submission_id   varchar(36), 
+    FOREIGN KEY     (question_id)  REFERENCES  questions(Id), 
+    FOREIGN KEY     (selection_option_id) REFERENCES options(Id),
+    FOREIGN KEY     (submission_id) REFERENCES submissions(Id)
+)

@@ -1,0 +1,17 @@
+{
+    "name": "shubham/backend",
+    "autoload": {
+        "psr-4": {
+            "Shubham\\Backend\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "palmate09",
+            "email": "palmateshubham9@gmail.com"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    }
+}
