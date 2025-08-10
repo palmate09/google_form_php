@@ -14,11 +14,11 @@
     $pass = $_ENV['DB_PASS']; 
 
 
-    $conn = new mysqli($host, $name, $user, $pass); 
-
-    if($conn->connection_error()){
-        die("Connection falied".$conn->connection_error()); 
+    try{
+        $conn = new PDO($host, $name, $user, $pass);
+        $conn->setAttribute(PDO::ATTER_ERRMODE, PDO::ERRORMODE_EXCEPTION);  
     }
-
-    echo "Connection successfully with database";
+    catch(PDOException $e){
+        die("Connection failed: ". $e->getMessage()); 
+    }
 ?>
