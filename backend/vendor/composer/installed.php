@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'shubham/backend',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '4528b7891720aada042009c75f5ecd6ce1a94f92',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => false,
         ),
         'shubham/backend' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '4528b7891720aada042009c75f5ecd6ce1a94f92',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

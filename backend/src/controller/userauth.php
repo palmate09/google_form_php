@@ -8,11 +8,6 @@
     $method = $_SERVER['REQUEST_METHOD']; 
     $input = json_encode(file_get_contents('php://input'), true); 
 
-    if(!isset($input["action"])){
-        echo json_encode(["status" => "error", "message" => "Action is required"]); 
-    }
-
-
     //creating the uuid 
     function generateUUID() {
         return sprintf(
@@ -27,7 +22,7 @@
 
     // register endpoint
     function registerUser($conn, $input){
-        if(empty($username) || empty($password) || empty($email)){
+        if(empty($input["email"]) || empty($input["password"]) || empty($input['username']) || empty($input["role"])){
             echo json_encode(["status" => "error", "message" => "All fields are required"]); 
             exit; 
         }
@@ -36,31 +31,31 @@
         $hashedPassword = password_hash($input["password"], PASSWORD_BCRYPT); 
         $email = $input["email"]; 
         $username = $input["username"]; 
-        $role = isset($input["role"])?$input["role"] : "user"; 
+        $role = isset($input["role"])? $input["role"] : "user"; 
 
         $stmt = $conn->prepare('INSERT INTO users(username, password, email, role, userId) VALUES(?,?,?,?,?)'); 
 
         try{
-            $stmt->execute([$userId], $username, $hashedPassword, $email, $role); 
+            $stmt->execute([ $username, $hashedPassword, $email, $role, $userId]); 
             echo json_encode([
                 "status" => "success", 
-                "message" => "User registered successfully", 
-                "data" => $stmt
+                "message" => "User registered successfully"
             ]); 
         }
         catch(Exception $e){
-            echo $json_encode(["status" => "error", "message" => $e->message()]); 
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]); 
         }
     }
 
+    //login endpoint
     function loginUser($conn, $input){
-        if(empty($input["email"]) ?? empty($input['username']) || empty($input["password"])){
+        if((empty($input["email"]) && empty($input['username'])) || empty($input["password"])){
             echo json_encode(["status" => "error", "message" => "All fields are required"]);
             exit; 
         }
 
-        $stmt = $conn->prepare("SELECT * FROM user WHERE email = ?"); 
-        $stmt->execute([$data["email"]]); 
+        $stmt = $conn->prepare("SELECT * FROM users WHERE email = ? OR username = ?"); 
+        $stmt->execute([$input["email"] ?? $input["username"], $input["email"] ?? $input["username"]]); 
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if($user && password_verify($input["password"], $user["password"])){
