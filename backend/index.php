@@ -18,7 +18,7 @@
         getProfile($conn); 
     }
     else if ($method === "POST" && $path === "/password_resets"){
-        forgotPass($conn, $input); 
+        forgotPassRequest($conn, $input); 
     }
     else if ($method === "PUT" && $path === "/profile"){
         updateProfile($conn, $input); 

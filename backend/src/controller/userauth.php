@@ -174,10 +174,14 @@
 
             $resetLink = 'https://localhost:8000/reset_password?token='. $token; 
 
+            var_dump($resetLink); 
+
 
             $subject = "password reset request"; 
             $message = "Click here to reset your password:- ". $resetLink; 
             $headers = "From: palmateeknath09@gmail.com"; 
+
+            $sumFunction = mail($email, $subject, $message, $headers); 
 
             if(mail($email, $subject, $message, $headers)){
                 http_response_code(201); 
@@ -203,6 +207,7 @@
 
     // forgot password endpoint
     function forgotPass($conn, $input){
+
 
 
     }
