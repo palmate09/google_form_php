@@ -7,8 +7,7 @@
     use Firebase\JWT\JWT; 
     use Firebase\JWT\key;
 
-    $jwt_secret = $_ENV["JWT_SECRECT"]; 
-    var_dump($jwt_secret); 
+    
 
     $method = $_SERVER['REQUEST_METHOD']; 
     $input = json_encode(file_get_contents('php://input'), true); 
@@ -78,6 +77,12 @@
             'username' => $user['username'] 
         ];
 
+        $jwt_secret = $_ENV["JWT_SECRECT"]; 
+
+        if(!is_string($jwt_secret)){
+            throw new Exception('jwt secrect is missing or not a string'); 
+        } 
+
         $jwt = JWT::encode($payload, $jwt_secret, 'HS256');
 
         echo json_encode([
@@ -86,8 +91,10 @@
         ]); 
     }
 
-    // // profile endpoint
-    // function getProfile(){
+    // profile endpoint
+    function getProfile(){
 
-    // }
+        
+
+    }
 ?>
