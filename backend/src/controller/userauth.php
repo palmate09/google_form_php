@@ -8,8 +8,11 @@
     use Firebase\JWT\JWT; 
     use Firebase\JWT\key;
 
+    use PHPMailer\PHPMailer\PHPMailer; 
+    use PHPMailer\PHPMailer\Exception; 
 
-    $method = $_SERVER['REQUEST_METHOD']; 
+
+    // $method = $_SERVER['REQUEST_METHOD']; 
     $input = json_encode(file_get_contents('php://input'), true); 
 
     //creating the uuid 
@@ -152,6 +155,8 @@
             exit; 
         }
 
+        $mail = new PHPMailer(true); 
+
         try{
 
             $stmt = $conn->prepare('SELECT * FROM users WHERE email = ?'); 
@@ -172,28 +177,30 @@
             $stmt = $conn->prepare('INSERT INTO password_resets(email, token , expires_at) VALUES(?,?,?)');
             $stmt->execute([$email, $token, $expires]);
 
-            $resetLink = 'https://localhost:8000/reset_password?token='. $token; 
+            //server settings
+            $mail->isSMTP(); 
+            $mail->Host        = 'smtp.gmail.com';
+            $mail->SMTPAuth    = true; 
+            $mail->Username    = 'palmateeknath09@gmail.com'; 
+            $mail->Password    = 'zpooynoedofdbqny'; 
+            $mail->SMTPSecure  = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port        = 587; 
 
-            var_dump($resetLink); 
+            // Recipients
+            $mail->setFrom('palmateeknath09@gmail.com', 'Eknath Palmate'); 
+            $mail->addAddress('palmateshubham559@gmail.com', 'Shubham Palmate');
 
+            $mail->isHTML(true); 
+            $mail->Subject = 'Forgot password link';
+            $mail->Body    = "<b>Hello!</b> This is a test email sent using PHPMailer with SMTP   Link :- https://localhost:8000/reset_password?token=.$token";
+            
+            $mail->send(); 
 
-            $subject = "password reset request"; 
-            $message = "Click here to reset your password:- ". $resetLink; 
-            $headers = "From: palmateeknath09@gmail.com"; 
-
-            $sumFunction = mail($email, $subject, $message, $headers); 
-
-            if(mail($email, $subject, $message, $headers)){
-                http_response_code(201); 
-                echo json_encode(["status" => "success", "message" => "password reset email sent"]); 
-            }
-            else {
-                http_response_code(500);
-                echo json_encode([
-                    "status" => "error", 
-                    "message" => "email sending failed"
-                ]);
-            }
+            http_response_code(201); 
+            echo json_encode([
+                "status" => "success", 
+                "message" => "Email sent successfully"
+            ]);
         }
         catch(Exception $e){
             http_response_code(500); 
@@ -202,14 +209,63 @@
                 "message" => $e->getMessage()
             ]);
         }
-        
     }
+
 
     // forgot password endpoint
     function forgotPass($conn, $input){
 
+        $token = $input["token"] ?? "";
+        $newPassword = $input["password"] ?? '';
+        $confirmPassword = $input['confirm_password'] ?? '';
+
+        if(empty($token) || empty($newPassword) || empty($confirmPassword)){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "Token, password, and confirm_password are required."
+            ]);
+            exit; 
+        }
+
+        if($newPassword !== $confirmPassword){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "password does not match"
+            ]);
+            exit; 
+        }
+
+        // check token validity
+        $stmt = $conn->prepare('SELECT * FROM password_resets WHERE token = ? AND expires_at >= NOW()');
+        $stmt->execute([$token]); 
+        $resetData = $stmt->fetch(PDO::FETCH_ASSOC);
 
 
+        if(!$resetData){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "Invalid or token exipred"
+            ]);
+            exit; 
+        }
+
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT); 
+
+        $stmt = $conn->prepare('UPDATE users SET password = ? WHERE email = ?');
+        $stmt->execute([$newPassword, $resetData['email']]); 
+
+        $stmt = $conn->prepare('DELETE FROM password_resets WHERE email = ?');
+        $stmt->execute([$hashedPassword, $resetData['email']]); 
+
+
+        http_response_code(200); 
+        echo json_encode([
+            "status" => "success", 
+            "message" => "Password has been successfully updated"
+        ]);
     }
 
     // update the profile 
