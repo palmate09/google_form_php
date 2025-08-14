@@ -4,6 +4,11 @@
     require_once __DIR__ . "/../config/dbconnection.php";
     header("Content-Type: application/json"); 
 
+    use Firebase\JWT\JWT; 
+    use Firebase\JWT\key;
+
+    $jwt_secret = $_ENV["JWT_SECRECT"]; 
+    var_dump($jwt_secret); 
 
     $method = $_SERVER['REQUEST_METHOD']; 
     $input = json_encode(file_get_contents('php://input'), true); 
@@ -58,18 +63,31 @@
         $stmt->execute([$input["email"] ?? $input["username"], $input["email"] ?? $input["username"]]); 
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if($user && password_verify($input["password"], $user["password"])){
-            echo json_encode([
-                "status" => "success", 
-                "message" => "Login successfully"
-            ]); 
-        }
-        else{
+        if(!$user && !password_verify($input["password"], $user["password"])){
             echo json_encode([
                 "status" => "success", 
                 "message" => "Invalid email or password"
-            ]); 
+            ]);  
         }
+
+        $payload = [
+            'iss' => 'http://localhost:8000', 
+            'iat' => time(), 
+            'exp' => time() + (60* 60 * 60), 
+            'sub' => $user['userId'], 
+            'username' => $user['username'] 
+        ];
+
+        $jwt = JWT::encode($payload, $jwt_secret, 'HS256');
+
+        echo json_encode([
+            'token' => $jwt, 
+            'message' => 'Login Successfully'
+        ]); 
     }
 
+    // // profile endpoint
+    // function getProfile(){
+
+    // }
 ?>

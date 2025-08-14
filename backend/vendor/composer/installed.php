@@ -3,13 +3,22 @@
         'name' => 'shubham/backend',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '4528b7891720aada042009c75f5ecd6ce1a94f92',
+        'reference' => '8d50c6c3d9fff7aadef34db9d742c144d5a81b19',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
+        'firebase/php-jwt' => array(
+            'pretty_version' => 'v6.11.1',
+            'version' => '6.11.1.0',
+            'reference' => 'd1e91ecf8c598d073d0995afa8cd5c75c6e19e66',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../firebase/php-jwt',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'graham-campbell/result-type' => array(
             'pretty_version' => 'v1.1.3',
             'version' => '1.1.3.0',
@@ -31,7 +40,7 @@
         'shubham/backend' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '4528b7891720aada042009c75f5ecd6ce1a94f92',
+            'reference' => '8d50c6c3d9fff7aadef34db9d742c144d5a81b19',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
