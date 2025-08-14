@@ -14,6 +14,18 @@
     else if($method === 'POST' && $path === '/login'){
         loginUser($conn, $input); 
     }
+    else if ($method === "GET" && $path === "/profile"){
+        getProfile($conn); 
+    }
+    else if ($method === "POST" && $path === "/password_resets"){
+        forgotPass($conn, $input); 
+    }
+    else if ($method === "PUT" && $path === "/profile"){
+        updateProfile($conn, $input); 
+    }
+    else if($method === "DELETE" && $path === "/profile"){
+        deleteProfile($conn); 
+    }
     else{
         http_response_code(404); 
         echo json_encode(["status" => "error", "message" => "Enpoint not found"]); 

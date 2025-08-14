@@ -6,8 +6,15 @@ create table users(
     email          varchar(255)  unique, 
     role           ENUM('admin', 'user'), 
     created_at     TIMESTAMP DEFAULT   CURRENT_TIMESTAMP 
-)
+);
 
+CREATE TABLE password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    token VARCHAR(64) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 create table quizzes(
     Id              varchar(36) PRIMARY KEY, 
@@ -16,14 +23,14 @@ create table quizzes(
     description     text, 
     created_at      TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY     (creator_id)    REFERENCES users(userId)
-)
+);
 
 create table questions(
     Id              Int      AUTO_INCREMENT PRIMARY KEY, 
     quiz_id         varchar(36), 
     question_text   text, 
-    FOREIGN KEY     (quiz_id)   REFERENCES quizzes(Id)            
-)
+    FOREIGN KEY     (quiz_id)   REFERENCES  quizzes(Id)            
+);
 
 create table options(
     Id              Int      AUTO_INCREMENT   PRIMARY KEY, 
@@ -31,7 +38,7 @@ create table options(
     option_text     text, 
     is_correct      Boolean,
     FOREIGN KEY     (question_id)   REFERENCES questions(Id) 
-)
+);
 
 create table submissions(
     Id              varchar(36)    PRIMARY KEY, 
@@ -41,7 +48,7 @@ create table submissions(
     submitted_at    TIMESTAMP  DEFAULT CURRENT_TIMESTAMP, 
     FOREIGN KEY     (user_id)       REFERENCES users(userId), 
     FOREIGN KEY     (quiz_id)       REFERENCES quizzes(Id)
-)
+);
 
 create table answers(
     Id              Int           AUTO_INCREMENT           PRIMARY KEY, 
@@ -51,4 +58,4 @@ create table answers(
     FOREIGN KEY     (question_id)  REFERENCES  questions(Id), 
     FOREIGN KEY     (selection_option_id) REFERENCES options(Id),
     FOREIGN KEY     (submission_id) REFERENCES submissions(Id)
-)
+);
