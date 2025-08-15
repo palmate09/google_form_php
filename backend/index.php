@@ -20,7 +20,7 @@
     else if ($method === "POST" && $path === "/password_resets"){
         forgotPassRequest($conn, $input); 
     }
-    else if ($method === "PUT" && $path === '/reset_password?token'){
+    else if ($method === "POST" && $path === '/reset_password'){
         forgotPass($conn, $input);
     }
     else if ($method === "PUT" && $path === "/profile"){

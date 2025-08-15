@@ -12,7 +12,7 @@
     use PHPMailer\PHPMailer\Exception; 
 
 
-    // $method = $_SERVER['REQUEST_METHOD']; 
+    $method = $_SERVER['REQUEST_METHOD']; 
     $input = json_encode(file_get_contents('php://input'), true); 
 
     //creating the uuid 
@@ -172,6 +172,7 @@
             }
 
             $token = bin2hex(random_bytes(32)); 
+            date_default_timezone_set('Asia/Kolkata');
             $expires = date('Y-m-d H:i:s', strtotime('+1 hour')); 
 
             $stmt = $conn->prepare('INSERT INTO password_resets(email, token , expires_at) VALUES(?,?,?)');
@@ -255,10 +256,10 @@
         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT); 
 
         $stmt = $conn->prepare('UPDATE users SET password = ? WHERE email = ?');
-        $stmt->execute([$newPassword, $resetData['email']]); 
+        $stmt->execute([$hashedPassword, $resetData['email']]); 
 
         $stmt = $conn->prepare('DELETE FROM password_resets WHERE email = ?');
-        $stmt->execute([$hashedPassword, $resetData['email']]); 
+        $stmt->execute([$resetData['email']]); 
 
 
         http_response_code(200); 
