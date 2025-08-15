@@ -1,6 +1,7 @@
 
 <?php
     require __DIR__ . '/src/controller/userauth.php';
+    require __DIR__ . '/src/controller/quiz.php'; 
 
 
     $method = $_SERVER["REQUEST_METHOD"];
@@ -28,6 +29,9 @@
     }
     else if($method === "DELETE" && $path === "/profile"){
         deleteProfile($conn); 
+    }
+    else if($method === "POST" && $path  === "/new_quiz"){
+        newQuiz($conn, $input);
     }
     else{
         http_response_code(404); 

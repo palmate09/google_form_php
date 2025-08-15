@@ -2,7 +2,8 @@
 <?php
 
     require_once __DIR__ . "/../config/dbconnection.php";
-    require_once __DIR__ . "/../middleware/authmiddlware.php"; 
+    require_once __DIR__ . "/../middleware/authmiddlware.php";
+    require_once __DIR__ . '/../utils/helpers.php'; 
     header("Content-Type: application/json"); 
 
     use Firebase\JWT\JWT; 
@@ -11,21 +12,8 @@
     use PHPMailer\PHPMailer\PHPMailer; 
     use PHPMailer\PHPMailer\Exception; 
 
-
-    $method = $_SERVER['REQUEST_METHOD']; 
     $input = json_encode(file_get_contents('php://input'), true); 
 
-    //creating the uuid 
-    function generateUUID() {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000, // version 4
-            mt_rand(0, 0x3fff) | 0x8000, // variant
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-    );
-}
 
     // register endpoint
     function registerUser($conn, $input){
@@ -276,7 +264,7 @@
 
         $userId = $auth['sub']; 
 
-        if(!$userId || empty($input['email'] || empty($input['username']))){
+        if(!$userId && empty($input['email'] && empty($input['username']) && empty($input["name"]))){
             echo json_encode([
                 "status" => "error", 
                 "message" => "userId not found"
@@ -286,8 +274,8 @@
 
         try{
             // update the user
-            $stmt = $conn->prepare('UPDATE users SET email =? , username = ? WHERE userId = ?'); 
-            $stmt->execute([$input['email'], $input['username'], $userId]); 
+            $stmt = $conn->prepare('UPDATE users SET email =? , username = ?, name = ? WHERE userId = ?'); 
+            $stmt->execute([$input['email'], $input['username'], $input['name'], $userId]); 
             
             // show the updated data
             $stmt = $conn->prepare('SELECT * FROM users WHERE userId = ?'); 
