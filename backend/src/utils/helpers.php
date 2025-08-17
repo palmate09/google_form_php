@@ -71,7 +71,7 @@
     function check_quiz($conn){
         $admin = adminMiddleware();
         $admin_id = $admin['sub'];
-        $quiz_id = $_GET['Id'];
+        $quiz_id = $_GET['quiz_id'];
         
         $identifier = $admin_id || $quiz_id; 
 
@@ -79,7 +79,7 @@
             http_response_code(401); 
             echo json_encode([
                 "status" => "error", 
-                "message" => "admin or admin_id or quiz_id not found"
+                "message" => "admin_id or quiz_id not found"
             ]); 
             exit; 
         }
@@ -112,5 +112,45 @@
         }
 
 
+    }
+
+    function check_question($conn){
+
+        $question_id = $_GET['question_id'];  
+
+        if(!$question_id){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "admin_id or question_id not found"
+            ]);
+            exit; 
+        }
+
+        try{
+
+            $stmt = $conn->prepare('SELECT * FROM questions WHERE id = ?');
+            $stmt->execute([$question_id]); 
+            $question_data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$question_data){
+                http_response_code(401); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "questions data not found"
+                ]);
+                exit; 
+            }
+
+            return $question_data; 
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
     }
 ?>
