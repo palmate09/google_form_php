@@ -3,6 +3,7 @@
     require_once __DIR__ . "/../config/dbconnection.php";
     require_once __DIR__ . "/../controller/userauth.php";
     require_once __DIR__ . "/../middleware/authmiddlware.php";
+    require_once __DIR__ . "/../middleware/adminMiddleware.php"; 
     header("Content-Type: application/json"); 
 
 
@@ -65,5 +66,51 @@
             ]);
             exit; 
         }
+    }
+
+    function check_quiz($conn){
+        $admin = adminMiddleware();
+        $admin_id = $admin['sub'];
+        $quiz_id = $_GET['Id'];
+        
+        $identifier = $admin_id || $quiz_id; 
+
+        if(!$identifier){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "admin or admin_id or quiz_id not found"
+            ]); 
+            exit; 
+        }
+
+        try{
+            
+            $stmt = $conn->prepare('SELECT * FROM quizzes WHERE Id = ? AND creator_id = ?');
+            $stmt->execute([$quiz_id, $admin_id]); 
+            $quiz = $stmt->fetch(PDO::FETCH_ASSOC); 
+
+            if(!$quiz){
+                http_response_code(401); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "Quiz not found"
+                ]);
+                exit; 
+            }
+
+
+            return $quiz; 
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
+
+
     }
 ?>

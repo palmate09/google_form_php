@@ -51,7 +51,6 @@
         }
     }
 
-
     // update the quiz
     function updateQuiz($conn, $input){
         
@@ -73,8 +72,8 @@
 
         try{
 
-            $stmt = $conn->prepare('UPDATE FROM quizzes(title, description) WHERE Id = ? AND adminId = ?');
-            $stmt->execute([$id, $adminId]);
+            $stmt = $conn->prepare('UPDATE quizzes SET title = ? , description = ? WHERE Id = ? AND adminId = ?');
+            $stmt->execute([$title, $description, $id, $adminId]);
             $updatedData = $stmt->fetch(PDO::FETCH_ASSOC);
 
             http_response_code(200); 
@@ -224,8 +223,41 @@
     }
 
 
-    // delete the specific quiz 
+    // delete the specific quiz of specific admin
     function deleteQuiz($conn){
 
+        $id = $_GET['Id']; 
+        $admin = roleCheck($conn); 
+        $admin_id = $admin['Id'];
+
+        $identifier = $id ?? $admin_id; 
+
+        if(!$identifier){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error",
+                "message" => "$identifier is not defiend"
+            ]);
+            exit; 
+        }
+
+        try{
+            $stmt = $conn->prepare('DELETE FROM users WHERE Id = ? AND creator_id = ?');
+            $stmt->execute([$id, $admin_id]);
+
+            http_response_code(200); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "Users data has been deleted Successfully"
+            ]);
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]);
+            exit; 
+        }
     }
 ?>

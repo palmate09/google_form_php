@@ -19,7 +19,8 @@
     function registerUser($conn, $input){
         if(empty($input["email"]) || empty($input["password"]) || empty($input['username']) || empty($input["role"])){
             echo json_encode(["status" => "error", "message" => "All fields are required"]); 
-            exit; 
+            exit;
+            // Specify the error & make a function
         }
 
         $userId = generateUUID(); 
@@ -29,6 +30,7 @@
         $role = isset($input["role"])? $input["role"] : "user"; 
 
         $stmt = $conn->prepare('INSERT INTO users(username, password, email, role, userId) VALUES(?,?,?,?,?)'); 
+        // sql/db columns must be snake cased
 
         try{
             $stmt->execute([ $username, $hashedPassword, $email, $role, $userId]); 
@@ -72,7 +74,7 @@
         $jwt_secret = $_ENV["JWT_SECRECT"]; 
 
         if(!is_string($jwt_secret)){
-            throw new Exception('jwt secrect is missing or not a string'); 
+            throw new Exception('jwt secret is missing or not a string'); 
         } 
 
         $jwt = JWT::encode($payload, $jwt_secret, 'HS256');
@@ -84,7 +86,6 @@
         ]); 
     }
   
-
     // profile endpoint
     function getProfile($conn){
         
@@ -96,7 +97,7 @@
             http_response_code(401); 
             echo json_encode([
                 "status" => "error", 
-                "message" => "userId not found"
+                "message" => "User Id not found"
             ]); 
         }
 
@@ -174,6 +175,7 @@
             $mail->Password    = 'zpooynoedofdbqny'; 
             $mail->SMTPSecure  = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port        = 587; 
+            // use mailtrap for email testings
 
             // Recipients
             $mail->setFrom('palmateeknath09@gmail.com', 'Eknath Palmate'); 
@@ -199,7 +201,6 @@
             ]);
         }
     }
-
 
     // forgot password endpoint
     function forgotPass($conn, $input){

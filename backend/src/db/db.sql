@@ -27,7 +27,7 @@ create table quizzes(
 
 create table questions(
     Id              Int      AUTO_INCREMENT PRIMARY KEY, 
-    quiz_id         varchar(36), 
+    quiz_id         varchar(36),
     question_text   text, 
     FOREIGN KEY     (quiz_id)   REFERENCES  quizzes(Id)            
 );
