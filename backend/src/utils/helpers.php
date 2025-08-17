@@ -153,4 +153,53 @@
             exit; 
         }
     }
+
+    function check_option($conn){
+
+        $option_id = $_GET['option_id']; 
+
+        if(!$option_id){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "option id not found"
+            ]); 
+            exit; 
+        }
+
+        try{
+
+            $stmt = $conn->prepare('SELECT * FROM options WHERE Id = ?');
+            $stmt->execute([$option_id]); 
+            $option_data = $stmt->fetch(PDO::FETCH_ASSOC); 
+
+            if(!$option_data){
+                http_response_code(401); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "option data not found"
+                ]); 
+                exit; 
+            }
+
+            if($option_data['is_correct'] == false){
+                http_response_code(401);
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "your selected option is incorrect"
+                ]);
+                exit;  
+            }
+
+            return $option_data; 
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
+    }
 ?>
