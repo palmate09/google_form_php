@@ -41,7 +41,7 @@ create table options(
 );
 
 create table submissions(
-    Id              varchar(36)    PRIMARY KEY, 
+    id              varchar(36)    PRIMARY KEY, 
     quiz_id         varchar(36), 
     user_id         varchar(36), 
     score           Int, 
@@ -51,9 +51,9 @@ create table submissions(
 );
 
 create table answers(
-    Id                  Int           AUTO_INCREMENT           PRIMARY KEY, 
+    id                  Int           AUTO_INCREMENT           PRIMARY KEY, 
     question_id         Int, 
-    selection_option_id Int, 
+    option_id           Int, 
     submission_id       varchar(36), 
     FOREIGN KEY         (question_id)  REFERENCES  questions(Id), 
     FOREIGN KEY         (selection_option_id) REFERENCES options(Id),
