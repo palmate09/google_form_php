@@ -13,7 +13,7 @@
     // input handling and finding the error
     function input_handler($conn, $input){
 
-        $quiz = check_quiz();
+        $quiz = check_quiz($conn);
         $quiz_id = $quiz['Id']; 
         $question_text = $input['question_text'];
         $id = $_GET['Id'];
@@ -51,9 +51,9 @@
     
 
     //create the question
-    function create_question($conn){
+    function create_question($conn, $input){
 
-        $identifier = input_handler(); 
+        $identifier = input_handler($conn, $input); 
         $quiz_id = $identifier['quiz_id']; 
         $question_text = $identifier['question_text']; 
 
@@ -90,9 +90,9 @@
     }
 
     // update the question 
-    function update_question($conn){
+    function update_question($conn, $input){
 
-        $identifier = input_handler(); 
+        $identifier = input_handler($conn, $input); 
         $quiz_id = $identifier['quiz_id']; 
         $question_text = $input['question_text']; 
         $id = $_GET['Id']; 
@@ -126,9 +126,9 @@
     }
 
     // get the question 
-    function get_question($conn){
+    function get_question($conn, $input){
 
-        $identifier = input_handler();
+        $identifier = input_handler($conn, $input);
         $quiz_id = $identifier['quiz_id'];  
         $id = $identifier['id'];
 

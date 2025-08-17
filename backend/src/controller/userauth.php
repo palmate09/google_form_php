@@ -53,7 +53,7 @@
         }
 
         $stmt = $conn->prepare("SELECT * FROM users WHERE email = ? OR username = ?"); 
-        $stmt->execute([$input["email"] ?? $input["username"], $input["email"] ?? $input["username"]]); 
+        $stmt->execute([$input["email"] ?? $input["username"]]); 
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if(!$user && !password_verify($input["password"], $user["password"])){
