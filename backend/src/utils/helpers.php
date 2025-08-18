@@ -202,4 +202,45 @@
             exit; 
         }
     }
+
+    function check_submission($conn){
+
+        $submission_id = $_GET['id'];
+        
+        if(!$submission_id){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error",
+                "message" => "quiz id is not received"
+            ]);
+            exit; 
+        }
+
+        try{
+
+            $stmt =  $conn->prepare('SELECT * FROM submissions WHERE id = ?');
+            $stmt->execute([$submission_id]);
+            $submission_data = $stmt->fetch(PDO::FETCH_ASSOC); 
+
+            if(!$submission_data){
+                http_response_code(401); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "submission data not found"
+                ]);
+                exit; 
+            }
+
+            return $submission_data;
+
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
+    }
 ?>
