@@ -82,11 +82,82 @@
         }
     }
     
-    // get all the submissions
+    // get all the submissions for the user
+    function get_submission($conn){
 
+        $identifier = input_handler(); 
+        $user_id = $identifier['user_id']; 
+        
+        try{
+            
+            $stmt = $conn->prepare('SELECT * FROM submissions WHERE user_id = ?'); 
+            $stmt->execute([$user_id]); 
+            $submissions = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            if(!$submissions){
+                http_response_code(401); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "submissions are not received"
+                ]); 
+                exit; 
+            }
 
-    
+            http_response_code(200); 
+            echo json_encode([
+                "status" => "success", 
+                "message" => "all the submission are sucessfully received", 
+                "data" => $submissions
+            ]);
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
+    }
+
+    // get the particular submisssion 
+    function get_particular_submission($conn){
+
+        $identifier = input_handler(); 
+        $user_id = $identifier['user_id']; 
+        $submission_id = $identifier['id']; 
+
+        try{
+
+            $stmt = $conn->prepare('SELECT * FROM submissions WHERE user_id = ? , id = ?');
+            $stmt->execute([$user_id, $submission_id]); 
+            $submission = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$submission){
+                http_response_code(401); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "submission is not received"
+                ]); 
+                exit; 
+            }
+
+            http_response_code(200); 
+            echo json_encode([
+                "status" => "success", 
+                "message" => "submission is received successfully", 
+                "data" => $submission
+            ]); 
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
+    }
 
 
 
