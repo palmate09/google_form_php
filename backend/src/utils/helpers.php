@@ -3,7 +3,6 @@
     require_once __DIR__ . "/../config/dbconnection.php";
     require_once __DIR__ . "/../controller/userauth.php";
     require_once __DIR__ . "/../middleware/authmiddlware.php";
-    require_once __DIR__ . "/../middleware/adminMiddleware.php"; 
     header("Content-Type: application/json"); 
 
 
@@ -47,6 +46,7 @@
                 exit; 
             }
 
+
             if($admin["role"] !== "admin"){
                 http_response_code(401); 
                 echo json_encode([
@@ -69,8 +69,10 @@
     }
 
     function check_quiz($conn){
-        $admin = adminMiddleware();
-        $admin_id = $admin['sub'];
+        $user = authmiddlware();
+        if($user['role'] === 'admin'){
+            $admin_id = $user['sub'];
+        }
         $quiz_id = $_GET['quiz_id'];
         
         $identifier = $admin_id || $quiz_id; 
@@ -88,7 +90,8 @@
             
             $stmt = $conn->prepare('SELECT * FROM quizzes WHERE Id = ? AND creator_id = ?');
             $stmt->execute([$quiz_id, $admin_id]); 
-            $quiz = $stmt->fetch(PDO::FETCH_ASSOC); 
+            $quiz = $stmt->fetch(PDO::FETCH_ASSOC);
+            print($quiz); 
 
             if(!$quiz){
                 http_response_code(401); 
@@ -98,7 +101,6 @@
                 ]);
                 exit; 
             }
-
 
             return $quiz; 
         }
@@ -116,22 +118,24 @@
 
     function check_question($conn){
 
+        $admin = roleCheck($conn); 
+        $admin_id = $admin['userId'];  
         $question_id = $_GET['question_id'];  
 
         if(!$question_id){
             http_response_code(401); 
             echo json_encode([
                 "status" => "error", 
-                "message" => "admin_id or question_id not found"
+                "message" => "question_id not found"
             ]);
             exit; 
         }
 
         try{
 
-            $stmt = $conn->prepare('SELECT * FROM questions WHERE id = ?');
+            $stmt = $conn->prepare('SELECT * FROM questions WHERE Id = ?');
             $stmt->execute([$question_id]); 
-            $question_data = $stmt->fetch(PDO::FETCH_ASSOC);
+            $question_data = $stmt->fetch(PDO::FETCH_ASSOC); 
 
             if(!$question_data){
                 http_response_code(401); 

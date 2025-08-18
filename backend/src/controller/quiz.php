@@ -10,7 +10,8 @@
     $input = json_encode(file_get_contents('php://input'), true);
     
 
-    // create the quiz 
+    // create the quiz
+    // url:- /quiz/new_quiz 
     function newQuiz($conn, $input){
 
         $auth    = authmiddlware(); 
@@ -52,11 +53,12 @@
     }
 
     // update the quiz
+    // url:- /quiz/:quiz_id/update_quiz
     function updateQuiz($conn, $input){
         
         $admin = roleCheck($conn); 
-        $adminId = $admin['sub']; 
-        $id = $_GET["Id"];
+        $adminId = $admin['userId'];
+        $id = $_GET["quiz_id"];
         $title = $input["title"];
         $description = $input["description"]; 
 
@@ -71,10 +73,14 @@
         }
 
         try{
-
-            $stmt = $conn->prepare('UPDATE quizzes SET title = ? , description = ? WHERE Id = ? AND adminId = ?');
+            //update the quiz
+            $stmt = $conn->prepare('UPDATE quizzes SET title = ? , description = ? WHERE Id = ? AND creator_id = ?');
             $stmt->execute([$title, $description, $id, $adminId]);
-            $updatedData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            //show the quiz
+            $stmt = $conn->prepare('SELECT * FROM quizzes WHERE creator_id = ?');
+            $stmt->execute([$adminId]);
+            $updatedData = $stmt->fetch(PDO::FETCH_ASSOC); 
 
             http_response_code(200); 
             echo json_encode([
@@ -87,16 +93,17 @@
             http_response_code(500); 
             echo json_encode([
                 "status" => "Error",
-                "message" => $e.getMessage()
+                "message" => $e->getMessage()
             ]);
             exit; 
         }
     }
 
     // get the particular quiz by Id
+    // url :- /quiz/get_quiz?quiz_id
     function getQuiz($conn){
 
-        $id = $_GET['Id']; 
+        $id = $_GET['quiz_id']; 
 
         if(!$id){
             http_response_code(401); 
@@ -124,7 +131,7 @@
 
             http_response_code(200); 
             echo json_encode([
-                "status" => "error", 
+                "status" => "success", 
                 "message" => "quiz data has been successfully found", 
                 "data" => $quizData
             ]); 
@@ -140,10 +147,11 @@
     }
 
     // get all the quizzes of specific admin
+    // url :- /quiz/get_all_quizzes
     function getAllQuizzes($conn){
 
         $admin = roleCheck($conn); 
-        $adminId = $admin["Id"]; 
+        $adminId = $admin["userId"]; 
 
         if(!$adminId){
             http_response_code(401); 
@@ -158,7 +166,7 @@
 
             $stmt = $conn->prepare('SELECT * FROM quizzes WHERE creator_id = ?'); 
             $stmt->execute([$adminId]); 
-            $quizzes = $stmt->fetch(PDO::FETCH_ASSOC); 
+            $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC); 
 
             if(!$quizzes){
                 http_response_code(401); 
@@ -187,10 +195,11 @@
     }
 
     // delete all the quizzes of specific admin
+    // url :- /quiz/delete_all_quizzes
     function deleteAllQuizzes($conn){
         
         $admin = roleCheck($conn); 
-        $adminId = $admin['sub']; 
+        $adminId = $admin['userId']; 
 
         if(!$adminId){
             http_response_code(401); 
@@ -222,13 +231,13 @@
         }
     }
 
-
     // delete the specific quiz of specific admin
+    // url :- /quiz/:quiz_id/delete_quiz
     function deleteQuiz($conn){
 
-        $id = $_GET['Id']; 
+        $id = $_GET['quiz_id']; 
         $admin = roleCheck($conn); 
-        $admin_id = $admin['Id'];
+        $admin_id = $admin['userId'];
 
         $identifier = $id ?? $admin_id; 
 
@@ -242,12 +251,12 @@
         }
 
         try{
-            $stmt = $conn->prepare('DELETE FROM users WHERE Id = ? AND creator_id = ?');
+            $stmt = $conn->prepare('DELETE FROM quizzes WHERE Id = ? AND creator_id = ?');
             $stmt->execute([$id, $admin_id]);
 
             http_response_code(200); 
             echo json_encode([
-                "status" => "error", 
+                "status" => "success", 
                 "message" => "Users data has been deleted Successfully"
             ]);
         }

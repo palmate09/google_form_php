@@ -11,29 +11,27 @@
     $input = json_encode(file_get_contents('php://input'), true); 
 
     // input handling and finding the error
-    function input_handler($conn, $input){
+    function input_handler($conn, $input, $requiredText = true){
 
         $quiz = check_quiz($conn);
-        $quiz_id = $quiz['Id']; 
-        $question_text = $input['question_text'];
-        $id = $_GET['Id'];
+        $quiz_id = $quiz['Id'] ?? null;
+        $question_text = $input['question_text'] ?? null;
+        $id = $_GET['question_id'] ?? null;
         
-        switch (true){
-            case !$quiz_id && !$question_text: 
-                $message = "quiz id and question text is required to fill";
+        $message = null; 
+        switch(true){
+            case !$quiz_id:
+                $message = 'quiz id is required'; 
                 break; 
-            case !$quiz_id: 
-                $message = "quiz id is required to fill"; 
-                break; 
-            case !$question_text: 
-                $message = "question text is required to fill";
+            case $requiredText && !$question_text:
+                $message = 'question text is required'; 
                 break;
-            case !$id: 
-                $message = "question id is required to fill"; 
-                break;  
+            case !$id & !$requiredText:
+                $message = 'question id is required'; 
+                break; 
         }
 
-        if($message){
+        if(!empty($message)){
             http_response_code(401); 
             echo json_encode([
                 "status" => "error", 
@@ -45,25 +43,24 @@
         return [
             'quiz_id'=>$quiz_id,
             'question_text'=>$question_text,
-            'id' => $id
+            'question_id' => $id
         ]; 
     }
     
-
     //create the question
+    //url:- /question/new_question
     function create_question($conn, $input){
 
-        $identifier = input_handler($conn, $input); 
+        $identifier = input_handler($conn, $input, true); 
         $quiz_id = $identifier['quiz_id']; 
         $question_text = $identifier['question_text']; 
 
         try{
 
             $stmt = $conn->prepare('INSERT INTO questions(quiz_id, question_text) VALUES (?, ?)');
-            $stmt->execute([$quiz_id, $question_text]); 
-            $question = $stmt->fetch(PDO::FETCH_ASSOC); 
+            $stmt->execute([$quiz_id, $question_text]);  
 
-            if(!$question){
+            if($stmt->rowCount() === 0){
                 http_response_code(401); 
                 echo json_encode([
                     "status" => "error", 
@@ -74,9 +71,8 @@
 
             http_response_code(201); 
             echo json_encode([
-                "status" => "error", 
-                "message" => "question has been successfully created", 
-                "data" => $question
+                "status" => "success", 
+                "message" => "question has been successfully created"
             ]); 
         }
         catch(Exception $e){
@@ -89,13 +85,14 @@
         }
     }
 
-    // update the question 
+    // update the question
+    // url:- /question/update_question 
     function update_question($conn, $input){
 
-        $identifier = input_handler($conn, $input); 
+        $identifier = input_handler($conn, $input, true); 
         $quiz_id = $identifier['quiz_id']; 
-        $question_text = $input['question_text']; 
-        $id = $_GET['Id']; 
+        $question_text = $identifier['question_text']; 
+        $id = $identifier['question_id']; 
 
     
         try{
@@ -111,7 +108,8 @@
             http_response_code(201); 
             echo json_encode([
                 'status'  => 'success', 
-                'message' => 'question data have been updated successfully!'
+                'message' => 'question data have been updated successfully!',
+                "data" => $question
             ]);
             exit; 
         }
@@ -125,12 +123,12 @@
         }
     }
 
-    // get the question 
-    function get_question($conn, $input){
-
-        $identifier = input_handler($conn, $input);
+    // get the question
+    // url:- /question/get_question 
+    function get_question($conn){
+        $identifier = input_handler($conn, $input, false);
         $quiz_id = $identifier['quiz_id'];  
-        $id = $identifier['id'];
+        $id = $identifier['question_id'];
 
         try{
 
@@ -165,16 +163,17 @@
     }
 
     // get all the questions
+    // url:- /question/get_all_question
     function get_all_questions($conn){
 
-        $identifier = input_handler(); 
+        $identifier = input_handler($conn, $input, false); 
         $quiz_id = $identifier['quiz_id']; 
 
         try{
 
             $stmt = $conn->prepare('SELECT * FROM questions WHERE quiz_id = ?'); 
             $stmt->execute([$quiz_id]); 
-            $questions_data = $stmt->fetch(PDO::FETCH_ASSOC); 
+            $questions_data = $stmt->fetchAll(PDO::FETCH_ASSOC); 
 
             if(!$questions_data){
                 http_response_code(401); 
@@ -202,11 +201,12 @@
         }
     }
 
-    //delete the particular question of the quiz 
+    //delete the particular question of the quiz
+    // url:- /question/delete_question 
     function delete_question($conn){
 
-        $identifier = input_handler(); 
-        $id = $identifier['id']; 
+        $identifier = input_handler($conn, $input, false); 
+        $id = $identifier['question_id']; 
         $quiz_id = $identifier['quiz_id']; 
 
         try{
@@ -241,18 +241,22 @@
     }
 
     // delete all the questions
+    // url:- /question/delete_all_question
     function delete_all_question($conn){
 
-        $identifier = input_handler(); 
+        $identifier = input_handler($conn, $input, false); 
         $quiz_id = $identifier['quiz_id']; 
 
         try{
 
             $stmt = $conn->prepare('DELETE FROM questions WHERE quiz_id = ?'); 
             $stmt->execute([$quiz_id]); 
-            $questions = $stmt->fetch(PDO::FETCH_ASSOC); 
+            
+            $stmt = $conn->prepare('SELECT * FROM questions WHERE quiz_id = ?');
+            $stmt->execute([$quiz_id]);
+            $question = $stmt->fetchAll(PDO::FETCH_ASSOC);  
 
-            if($question){
+            if(!empty($question)){
                 http_response_code(401); 
                 echo json_encode([
                     "status" => "error", 
