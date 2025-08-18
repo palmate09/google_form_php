@@ -43,8 +43,7 @@ create table options(
 create table submissions(
     id              varchar(36)    PRIMARY KEY, 
     quiz_id         varchar(36), 
-    user_id         varchar(36), 
-    score           Int,
+    user_id         varchar(36),
     submitted_at    TIMESTAMP  DEFAULT CURRENT_TIMESTAMP, 
     FOREIGN KEY     (user_id)       REFERENCES users(userId), 
     FOREIGN KEY     (quiz_id)       REFERENCES quizzes(Id)
@@ -53,7 +52,8 @@ create table submissions(
 create table answers(
     id                  Int           AUTO_INCREMENT           PRIMARY KEY, 
     question_id         Int, 
-    option_id           Int, 
+    option_id           Int,
+    score               int, 
     submission_id       varchar(36), 
     FOREIGN KEY         (question_id)  REFERENCES  questions(Id), 
     FOREIGN KEY         (option_id) REFERENCES options(Id),
@@ -61,10 +61,11 @@ create table answers(
 );
 
 create table result(
-    id                  varchar(36),
+    id                  varchar(36)   PRIMARY KEY,
     total_score         int,
     user_id             varchar(36), 
-    quiz_id             varchar(36), 
+    quiz_id             varchar(36),
+    submission_id       varchar(36),
     FOREIGN KEY         (user_id)   REFERENCES   users(userId),
     FOREIGN KEY         (quiz_id)   REFERENCES   quizzes(Id)
 );

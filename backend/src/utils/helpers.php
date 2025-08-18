@@ -182,15 +182,6 @@
                 exit; 
             }
 
-            if($option_data['is_correct'] == false){
-                http_response_code(401);
-                echo json_encode([
-                    "status" => "error", 
-                    "message" => "your selected option is incorrect"
-                ]);
-                exit;  
-            }
-
             return $option_data; 
         }
         catch(Exception $e){

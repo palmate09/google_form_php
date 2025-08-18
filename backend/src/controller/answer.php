@@ -10,9 +10,12 @@
 
     function input_handler($conn, $input){
 
-        $question_id = check_question($conn); 
-        $option_id = check_option($conn); 
-        $submission_id = check_submission($conn);
+        $option = check_option($conn);  
+        $option_id = $option['Id']; 
+        $submission = check_submission($conn);
+        $submission_id = $submission['id']; 
+        $question = check_question($conn);
+        $question_id = $question['Id'];
         $answer_id = $_GET['answer_id'];  
 
 
@@ -51,24 +54,34 @@
         ];
     }
 
-    // save the answer
+    // give the answers of particular question 
     function add_answer($conn, $input){
 
-        $identifier = input_handler($conn, $input); 
-        $option_id = check_option($conn); 
-        $submission_id = check_submission($conn); 
-        $question_id = check_question($conn); 
+        $identifier = input_handler($conn, $input);
+        $submission_id = $identifier['submission_id'];
+        $question_id = $identifier['question_id'];
+        $option_id = $identifier['option_id'];
+        $answer_id = $identifier['answer_id'];
+        $score = 0;  
 
         try{
 
             // add the answer
             $stmt = $conn->prepare('INSERT INTO answers(question_id, option_id, submission_id) VALUES (?, ?, ?)');
-            $stmt->execute([$question_id, $option_id, $submission_id]); 
+            $stmt->execute([$question_id, $option_id, $submission_id]);
+            
+            // check the option is correct or not
+            if($option['is_correct'] == true){
+                $score = $score + 1; 
+            }
+            else{
+                $score = $score - 1; 
+            }
             
             http_response_code(201); 
             echo json_encode([
                 "status" => "success", 
-                "message" => "answer has been successfully saved"
+                "message" => "answer has been successfully added"
             ]); 
         }
         catch(Exception $e){
@@ -118,6 +131,57 @@
             exit; 
         }
 
+    }
+
+    //update the answer 
+    function update_answer($conn, $input){
+        $option = check_option($conn);  
+        $option_id = $option['Id']; 
+        $submission = check_submission($conn);
+        $submission_id = $submission['id']; 
+        $question = check_question($conn);
+        $question_id = $question['Id'];
+        $answer_id = $_GET['answer_id'];
+
+        $identifier = $option_id ?? $question_id ?? $submission_id;
+
+        if($identifier === null || empty($identifier)){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "atleast one field is required"
+            ]);
+            exit; 
+        }
+        
+        try{    
+
+            // update the user
+            $stmt = $conn->prepare('UPDATE answers SET question_id = ?, submission_id = ?, option_id = ? WHERE id = ?');
+            $stmt->execute([$question_id, $submission_id, $option_id, $answer_id]);
+            
+            //display the updated user
+            $stmt = $conn->prepare('SELECT * FROM answers WHERE id = ?');
+            $stmt->execute([$answer_id]);
+            $showAnswer = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            http_response_code(200);
+            echo json_encode([
+                "status" => "error", 
+                "message" => "user has been successfully updated", 
+                "data" => $showAnswer
+            ]);
+
+
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
     }
 
 
