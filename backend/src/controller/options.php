@@ -30,7 +30,7 @@
             case $requiredField && !isset($input['is_correct']): 
                 $message = 'option choice is required to fill';
                 break;
-            case $requiredField && !$id:
+            case !$requiredField && !$id:
                 $message = 'option id is not recieved'; 
                 break;   
         }

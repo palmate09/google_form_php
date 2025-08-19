@@ -8,31 +8,28 @@
 
     $input = json_encode(file_get_contents('php://input'), true); 
 
-    function input_handler($conn, $input){
+    function answer_input_handler($conn, $input , $requiredField = true){
 
         $option = check_option($conn);  
-        $option_id = $option['Id']; 
+        $option_id = $option['Id'] ?? null; 
         $submission = check_submission($conn);
-        $submission_id = $submission['id']; 
+        $submission_id = $submission['id'] ?? null; 
         $question = check_question($conn);
-        $question_id = $question['Id'];
-        $answer_id = $_GET['answer_id'];  
+        $question_id = $question['Id'] ?? null;
+        $answer_id = $_GET['answer_id'] ?? null;  
 
-
+        $message = null; 
         switch(true){
-            case !$question_id && !$option_id && !$submission_id && !$answer_id:
-                $message = 'all fields are required'; 
-                break; 
-            case !$question_id: 
+            case $requiredField && !$question_id: 
                 $message = 'question id required';
                 break; 
-            case !$option_id:
+            case $requiredField && !$option_id:
                 $message = 'option id required'; 
                 break; 
-            case !$submission_id:
+            case !$requiredField && !$submission_id:
                 $message = 'submission id required';
                 break; 
-            case !$answer_id:
+            case !$requiredField && !$answer_id:
                 $message = 'answer id required'; 
                 break;
         }
@@ -55,28 +52,42 @@
     }
 
     // give the answers of particular question 
-    function add_answer($conn, $input){
+    function add_answer($conn, $input ){
 
-        $identifier = input_handler($conn, $input);
+        $identifier = answer_input_handler($conn, $input, true);
         $submission_id = $identifier['submission_id'];
         $question_id = $identifier['question_id'];
         $option_id = $identifier['option_id'];
-        $answer_id = $identifier['answer_id'];
         $score = 0;  
 
         try{
 
-            // add the answer
-            $stmt = $conn->prepare('INSERT INTO answers(question_id, option_id, submission_id) VALUES (?, ?, ?)');
-            $stmt->execute([$question_id, $option_id, $submission_id]);
-            
+            // find the option from the option id
+            $stmt = $conn->prepare('SELECT * FROM options WHERE Id = ? AND question_id = ?'); 
+            $stmt->execute([$option_id, $question_id]);
+            $option_data = $stmt->fetch(PDO::FETCH_ASSOC); 
+
+            if(empty($option_data) || $option_data === null){
+                http_response_code(400); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "option data not found"
+                ]); 
+                exit; 
+            }
+
             // check the option is correct or not
-            if($option['is_correct'] == true){
+            if($option_data['is_correct'] == true){
                 $score = $score + 1; 
             }
             else{
                 $score = $score - 1; 
             }
+
+            // add the answer
+            $stmt = $conn->prepare('INSERT INTO answers(question_id, option_id, submission_id, score) VALUES (?, ?, ?, ?)');
+            $stmt->execute([$question_id, $option_id, $submission_id, $score]);
+            
             
             http_response_code(201); 
             echo json_encode([
@@ -95,15 +106,17 @@
     }
 
     // fetch the answer data 
-    function get_answer($conn, $input){
+    // this endpoint is not working 
+    function get_answer($conn){
 
-        $identifier = input_handler($conn, $input);
-        $answer_id = $identifier['answer_id'];
+        // $identifier = answer_input_handler($conn, false);
+        $answer_id = $_GET['answer_id'];
+        $submission_id = $_GET['submission_id']; 
         
         try{
 
-            $stmt = $conn->prepare('SELECT * FROM answers WHERE answer_id = ?');
-            $stmt->execute([$answer_id]); 
+            $stmt = $conn->prepare('SELECT * FROM answers WHERE id = ? AND submission_id = ?');
+            $stmt->execute([$answer_id, $submission_id]); 
             $answer_data = $stmt->fetch(PDO::FETCH_ASSOC); 
 
             if(!$answer_data){
@@ -130,49 +143,50 @@
             ]);
             exit; 
         }
-
     }
 
-    //update the answer 
-    function update_answer($conn, $input){
-        $option = check_option($conn);  
-        $option_id = $option['Id']; 
-        $submission = check_submission($conn);
-        $submission_id = $submission['id']; 
-        $question = check_question($conn);
-        $question_id = $question['Id'];
-        $answer_id = $_GET['answer_id'];
 
-        $identifier = $option_id ?? $question_id ?? $submission_id;
+    // get all the answers of the particular submission with questions;
+    // response: - question_id :- ?  and  answer_id = ?  then your score = ? 
+    function get_all_answers($conn){
 
-        if($identifier === null || empty($identifier)){
-            http_response_code(401); 
+        // $identifier = answer_input_handler($conn, false); 
+        $submission_id = $_GET['submission_id'];  
+
+        try{
+
+            $stmt = $conn->prepare('SELECT * FROM answers WHERE submission_id = ?');
+            $stmt->execute([$submission_id]);
+            $answers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    
+            if(empty($answers)){
+                http_response_code(401); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "answers not found of this submission id:= $submission_id"
+                ]); 
+                exit; 
+            }
+
+            $ans = [];
+
+            for($i = 0; $i<count($answers); $i++){
+                $data = [
+                    "question_id" => $answers[$i]['question_id'], 
+                    "score" => $answers[$i]['score']
+                ];
+
+                $ans[] = $data;  
+            }
+
+             
+            http_response_code(200); 
             echo json_encode([
-                "status" => "error", 
-                "message" => "atleast one field is required"
-            ]);
-            exit; 
-        }
-        
-        try{    
-
-            // update the user
-            $stmt = $conn->prepare('UPDATE answers SET question_id = ?, submission_id = ?, option_id = ? WHERE id = ?');
-            $stmt->execute([$question_id, $submission_id, $option_id, $answer_id]);
-            
-            //display the updated user
-            $stmt = $conn->prepare('SELECT * FROM answers WHERE id = ?');
-            $stmt->execute([$answer_id]);
-            $showAnswer = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            http_response_code(200);
-            echo json_encode([
-                "status" => "error", 
-                "message" => "user has been successfully updated", 
-                "data" => $showAnswer
-            ]);
-
-
+                "status" => "success", 
+                "message" => "all the answers received of this submission id :- $submission_id", 
+                "data" => $ans
+            ]); 
         }
         catch(Exception $e){
             http_response_code(500); 
@@ -183,6 +197,4 @@
             exit; 
         }
     }
-
-
 ?>

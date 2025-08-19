@@ -4,7 +4,8 @@
     require __DIR__ . '/src/controller/quiz.php';
     require __DIR__ . '/src/controller/questions.php';
     require __DIR__ . '/src/controller/options.php'; 
-    require __DIR__ . '/src/controller/submission.php'; 
+    require __DIR__ . '/src/controller/submission.php';
+    require __DIR__ . '/src/controller/answer.php';  
 
 
     $method = $_SERVER["REQUEST_METHOD"];
@@ -95,6 +96,15 @@
     }
     else if($method === 'GET' && $path === '/submissions/get_particular_submission'){
         get_particular_submission($conn); 
+    }
+    else if($method === 'POST' && $path === '/answers/add_answer'){
+        add_answer($conn, $input); 
+    }
+    else if($method === 'GET' && $path === '/answers/get_answer'){
+        get_answer($conn); 
+    }
+    else if($method === 'GET' && $path === '/answers/get_all_answers'){
+        get_all_answers($conn); 
     }
     else{
         http_response_code(404); 
