@@ -3,7 +3,8 @@
     require __DIR__ . '/src/controller/userauth.php';
     require __DIR__ . '/src/controller/quiz.php';
     require __DIR__ . '/src/controller/questions.php';
-    require __DIR__ . '/src/controller/options.php';  
+    require __DIR__ . '/src/controller/options.php'; 
+    require __DIR__ . '/src/controller/submission.php'; 
 
 
     $method = $_SERVER["REQUEST_METHOD"];
@@ -72,7 +73,7 @@
         add_option($conn, $input); 
     }
     else if($method === 'GET' && $path === '/option/get_option'){
-        get_option($conn); 
+        get_option($conn, $input); 
     }
     else if($method === 'PUT' && $path === '/option/update_option'){
         update_option($conn, $input);
@@ -81,10 +82,19 @@
         delete_option($conn, $input); 
     }
     else if($method === 'GET' && $path === '/option/get_all_option'){
-        get_option($conn); 
+        get_all_options($conn, $input); 
     }
     else if($method === 'DELETE' && $path === '/option/delete_all_options'){
-        get_all_options($conn); 
+        delete_all_options($conn); 
+    }
+    else if($method === 'POST' && $path === '/submissions/add_submission'){
+        add_submission($conn); 
+    }
+    else if($method === 'GET' && $path === '/submissions/get_submission'){
+        get_submission($conn); 
+    }
+    else if($method === 'GET' && $path === '/submissions/get_particular_submission'){
+        get_particular_submission($conn); 
     }
     else{
         http_response_code(404); 

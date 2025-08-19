@@ -7,16 +7,18 @@
     $input = json_encode(file_get_contents('php://input'), true); 
 
 
-    function input_handler($conn){
+    function submission_input_handler($conn, $requiredField = true){
 
-        $quiz_id = check_quiz($conn);
+        $quiz = check_quiz_for_user($conn);
+        $quiz_id = $quiz['Id'];  
         $user = authmiddlware();  
         if($user['role'] !== 'admin'){
             $user_id = $user['sub']; 
         }
         $id = generateUUID();
-        $score = 0; 
+        $submission_id = $_GET['submission_id'];
 
+        $message = null; 
         switch(true){
             case !$user_id && !$quiz_id && !$id: 
                 $message = "All fields are required to fill"; 
@@ -27,12 +29,12 @@
             case !$user_id:
                 $message = "user id not received"; 
                 break;
-            case !$id: 
+            case !$id && $requiredField: 
                 $message = 'id not received'; 
                 break;
-            case !$score:
-                $message = 'score is required to fill'; 
-                break;    
+            case !$requiredField && !$submission_id:
+                $message = 'submission id is required to fill';
+                break;     
         }
 
         if($message){
@@ -48,23 +50,23 @@
             "quiz_id" => $quiz_id, 
             "user_id" => $user_id, 
             "id" => $id,
-            "score" => $score
+            "submission_id" => $submission_id
         ];
     }
 
     // create the new submission for a quiz
+    // url :- /submissions/add_submission
     function add_submission($conn){
 
-        $identifier = input_handler($conn);
-        $submission_id = $identifier['id'];  
-        $quiz_id = $identifier['quiz_id']; 
+        $identifier = submission_input_handler($conn);
+        $id = $identifier['id'];  
+        $quiz_id = $identifier['quiz_id'];
         $user_id = $identifier['user_id']; 
-        $score = $identifier['score']; 
 
         try{
 
-            $stmt = $conn->prepare("INSERT INTO submissions(id, quiz_id, user_id, score) VALUES(?,?,?,?)");
-            $stmt->execute([$submission_id, $quiz_id, $user_id, $score]); 
+            $stmt = $conn->prepare("INSERT INTO submissions(id, quiz_id, user_id) VALUES(?,?,?)");
+            $stmt->execute([$id, $quiz_id, $user_id]); 
 
             http_response_code(201); 
             echo json_encode([
@@ -83,16 +85,17 @@
     }
     
     // get all the submissions for the user
+    // url :- /submission/get_submission
     function get_submission($conn){
 
-        $identifier = input_handler(); 
+        $identifier = submission_input_handler($conn); 
         $user_id = $identifier['user_id']; 
         
         try{
             
             $stmt = $conn->prepare('SELECT * FROM submissions WHERE user_id = ?'); 
             $stmt->execute([$user_id]); 
-            $submissions = $stmt->fetch(PDO::FETCH_ASSOC);
+            $submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if(!$submissions){
                 http_response_code(401); 
@@ -120,16 +123,17 @@
         }
     }
 
-    // get the particular submisssion 
+    // get the particular submisssion
+    // url:- /submission/get_particular_submission 
     function get_particular_submission($conn){
 
-        $identifier = input_handler(); 
+        $identifier = submission_input_handler($conn, false); 
         $user_id = $identifier['user_id']; 
-        $submission_id = $identifier['id']; 
+        $submission_id = $identifier['submission_id']; 
 
         try{
 
-            $stmt = $conn->prepare('SELECT * FROM submissions WHERE user_id = ? , id = ?');
+            $stmt = $conn->prepare('SELECT * FROM submissions WHERE user_id = ? AND id = ?');
             $stmt->execute([$user_id, $submission_id]); 
             $submission = $stmt->fetch(PDO::FETCH_ASSOC);
 

@@ -10,15 +10,15 @@
     function option_input_handler($conn, $input, $requiredField = true){
 
         $admin = roleCheck($conn);
-        $id = $_GET['option_id'] ?? null;  
+        $id = $_GET['option_id'] ?? null;
         $question_data = check_question($conn);
-        $question_id = $question_data['Id'];   
+        $question_id = $question_data['Id']; 
         $option_text = $input['option_text'] ?? null; 
-        $is_correct = isset($input['is_correct']) ? filter_var($input['is_correct'], FILTER_VALIDATE_BOOLEAN): null; 
+        $is_correct = isset($input['is_correct']) ? (filter_var($input['is_correct'], FILTER_VALIDATE_BOOLEAN) ? 1:0): null; 
 
         $message = null; 
         switch(true){
-            case !$is_correct && !$question_id && !$option_text && !$option_id:
+            case !$is_correct && !$question_id && !$option_text && !$id:
                 $message = 'option choice and question id and option text is required to fill'; 
                 break;  
             case !$question_id:
@@ -30,12 +30,12 @@
             case $requiredField && !isset($input['is_correct']): 
                 $message = 'option choice is required to fill';
                 break;
-            case !$option_id && !$requiredField:
+            case $requiredField && !$id:
                 $message = 'option id is not recieved'; 
                 break;   
         }
-
-        if($message){
+ 
+        if(!empty($message)){
             http_response_code(401);
             echo json_encode([
                 "status" => "error", 
@@ -49,7 +49,8 @@
             'option_text' => $option_text, 
             'option_choice' => $is_correct, 
             'option_id' => $id
-        ]; 
+        ];
+        
     }
 
     // create the options for the particular question by admin only 
@@ -106,7 +107,7 @@
             $stmt->execute([$option_text, $option_choice, $question_id, $option_id]);
             
             // show the updated option 
-            $stmt = $conn->prepare('SELECT * FROM options WHERE Id = ?, question_id = ?');
+            $stmt = $conn->prepare('SELECT * FROM options WHERE Id = ? AND question_id = ?');
             $stmt->execute([$option_id, $question_id]);
             $updatedOption = $stmt->fetch(PDO::FETCH_ASSOC); 
 
@@ -122,7 +123,8 @@
             http_response_code(200); 
             echo json_encode([
                 "status" => "success", 
-                "message" => "option has been successfully updated"
+                "message" => "option has been successfully updated", 
+                "data" => $updatedOption
             ]); 
         }
         catch(Exception $e){
@@ -136,7 +138,7 @@
     }
 
     // get the options for the particular question by anyone
-    function get_all_options($conn){
+    function get_all_options($conn, $input){
 
         $identifier = option_input_handler($conn, $input, false); 
         $question_id = $identifier['question_id'];
@@ -145,10 +147,10 @@
 
             $stmt = $conn->prepare('SELECT * FROM options WHERE question_id = ?'); 
             $stmt->execute([$question_id]); 
-            $options_data = $stmt->fetchAll(PDO::FETCH_ASSOC); 
+            $options_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            if(!$options_data){
-                http_response_code(401); 
+            if(empty($options_data) || $options_data === null){
+                http_response_code(400); 
                 echo json_encode([
                     "status" => "error", 
                     "message" => "options not received"
@@ -159,7 +161,8 @@
             http_response_code(200); 
             echo json_encode([
                 "status" => "success", 
-                "message" => "options have successfully received"
+                "message" => "options have successfully received",
+                "data" => $options_data
             ]); 
         }
         catch(Exception $e){
@@ -173,15 +176,15 @@
     }
 
     // get the particular option 
-    function get_option($conn){
+    function get_option($conn, $input){
 
         $identifier = option_input_handler($conn, $input, false);
-        $question_id = $identifier['question_id']; 
+        $question_id = $identifier['question_id'];
         $option_id = $identifier['option_id']; 
         
         try{
 
-            $stmt = $conn->prepare('SELECT * FROM options WHERE question_id = ? , Id = ?');
+            $stmt = $conn->prepare('SELECT * FROM options WHERE question_id = ? AND Id = ?');
             $stmt->execute([$question_id, $option_id]); 
             $option_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -219,17 +222,21 @@
         $question_id = $identifier['question_id']; 
 
         try{
-
-            $stmt = $conn->prepare('DELETE FROM options WHERE Id = ? , question_id = ?'); 
+            // delete the option
+            $stmt = $conn->prepare('DELETE FROM options WHERE Id = ? AND question_id = ?'); 
             $stmt->execute([$option_id, $question_id]); 
-            $options_data = $stmt->fetch(PDO::FETCH_ASSOC); 
+            
+            // show the option 
+            $stmt = $conn->prepare('SELECT * FROM options WHERE Id = ? AND question_id = ?');
+            $stmt->execute([$option_id, $question_id]); 
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if($option_data){
+            if(!empty($result)){
                 http_response_code(401); 
                 echo json_encode([
                     "status" => "error", 
-                    "message" => "option has not deleted"
-                ]);
+                    "message" => "option is not deleted yet"
+                ]); 
                 exit; 
             }
             
@@ -261,13 +268,17 @@
             $stmt->execute([$question_id]); 
 
             // check weather it is deleted or not
-            if($stmt->rowCount() !== 0){
+            $stmt = $conn->prepare('SELECT * FROM options WHERE question_id = ?');
+            $stmt->execute([$question_id]); 
+            $options = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if(!empty($options)){
                 http_response_code(401); 
                 echo json_encode([
                     "status" => "error", 
-                    "message" => "options of the question id :- $question_id not deleted yet"
+                    "message" => "option not found"
                 ]);
-                exit;
+                exit; 
             }
 
             http_response_code(200); 

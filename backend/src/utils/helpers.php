@@ -91,7 +91,6 @@
             $stmt = $conn->prepare('SELECT * FROM quizzes WHERE Id = ? AND creator_id = ?');
             $stmt->execute([$quiz_id, $admin_id]); 
             $quiz = $stmt->fetch(PDO::FETCH_ASSOC);
-            print($quiz); 
 
             if(!$quiz){
                 http_response_code(401); 
@@ -227,6 +226,88 @@
             }
 
             return $submission_data;
+
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
+    }
+
+    // function check_user($conn){
+
+    //     $user = authmiddlware(); 
+    //     $user_id = $user['sub']; 
+
+    //     if(!$user_id){
+    //         http_response_code(401); 
+    //         echo json_encode([
+    //             "status" => "error", 
+    //             "message" => "user id not found"
+    //         ]); 
+    //         exit; 
+    //     }
+
+    //     try{
+
+    //         $stmt = $conn->prepare('SELECT * FROM users WHERE userId = ?'); 
+    //         $stmt->execute([$user_id]); 
+    //         $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+    //         if($user['role'] !== 'user'){
+    //             http_response_code(401); 
+    //             echo json_encode([
+    //                 "status" => "error", 
+    //                 "message" => "this is not the user"
+    //             ]);  
+    //             exit; 
+    //         }
+
+    //         return $user; 
+    //     }
+    //     catch(Exception $e){
+    //         http_response_code(500); 
+    //         echo json_encode([
+    //             "status" => "error", 
+    //             "message" => $e->getMessage()
+    //         ]); 
+    //         exit; 
+    //     }
+    // }
+
+    function check_quiz_for_user($conn){
+        $quiz_id = $_GET['quiz_id']; 
+
+        if(!$quiz_id){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "user_id or quiz_id not found"
+            ]); 
+            exit; 
+        }
+        
+        try{
+
+            $stmt = $conn->prepare('SELECT * FROM quizzes WHERE Id = ?');
+            $stmt->execute([$quiz_id]);
+            $quiz = $stmt->fetch(PDO::FETCH_ASSOC);  
+            
+
+            if(empty($quiz)){
+                http_response_code(400); 
+                json_encode([
+                    "status" => "error", 
+                    "message" => "quiz not found"
+                ]); 
+                exit; 
+            }
+
+            return $quiz; 
 
         }
         catch(Exception $e){

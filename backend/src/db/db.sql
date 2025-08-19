@@ -20,9 +20,12 @@ create table quizzes(
     Id              varchar(36) PRIMARY KEY, 
     creator_id      varchar(36), 
     title           varchar(255), 
+    user_id         varchar(36),
     description     text, 
     created_at      TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY     (creator_id)    REFERENCES users(userId)
+    FOREIGN KEY     (creator_id)    REFERENCES users(userId),
+    FOREIGN KEY     (user_id)       REFERENCES users(userId)
+
 );
 
 create table questions(
