@@ -172,7 +172,7 @@
             $mail->Host        = 'smtp.gmail.com';
             $mail->SMTPAuth    = true; 
             $mail->Username    = 'palmateeknath09@gmail.com'; 
-            $mail->Password    = 'zpooynoedofdbqny'; 
+            $mail->Password    = $_ENV['MAIL_PASS']; 
             $mail->SMTPSecure  = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port        = 587; 
             // use mailtrap for email testings

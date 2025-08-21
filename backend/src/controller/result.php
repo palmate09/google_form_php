@@ -8,16 +8,17 @@
 
     $input = json_encode(file_get_contents('php://input'), true); 
 
-    function input_handler($conn){
+    function result_input_handler($conn){
 
-        $quiz_id = check_quiz($conn); 
-        $user = authmiddlware();
-        if($user['role'] === 'user'){
-            $user_id = $user['userId']; 
-        }
-        $submission_id = check_submission($conn);   
-        $result_id = $_GET['id'];
+        $id = generateUUID(); 
+        $quiz = check_quiz_for_user($conn);
+        $quiz_id = $quiz['Id'];
+        $user = check_user($conn);
+        $user_id = $user['userId']; 
+        $submission = check_submission($conn);
+        $submission_id = $submission['id'];
         
+        $message = null; 
         switch(true){
             case !$quiz_id && !$user_id && !$result_id && !$submission_id:
                 $message = "All fields are required to fill"; 
@@ -28,12 +29,12 @@
             case !$user_id: 
                 $message = 'user id is required to fill'; 
                 break; 
-            case !$result_id:
-                $message = 'result id is required to fill'; 
-                break;
             case !$submission_id:
                 $message = 'submission id is required to fill'; 
-                break;  
+                break;
+            case !$id:
+                $message = 'id is required to fill'; 
+                break;   
         }
 
         if($message){
@@ -48,7 +49,7 @@
         return [
             "quiz_id" => $quiz_id, 
             "user_id" => $user_id, 
-            "result_id" => $result_id,
+            "id" => $id,
             "submission_id" => $submission_id
         ];
     }
@@ -56,23 +57,28 @@
     // show the result
     function show_result($conn){
 
-        $identifier = input_handler($conn);
+        $identifier = result_input_handler($conn);
         $user_id = $identifier['user_id']; 
         $quiz_id = $identifier['quiz_id']; 
-        $submission_id = $identifier['submission_id']; 
+        $submission_id = $identifier['submission_id'];
+        $id = $identifier['id']; 
         $total_score = 0; 
         
         try{
 
             // give the query to get the total_score of each user
-            $stmt = $conn->prepare('SELECT user_id , SUM(score) AS total_score FROM submissions GROUP BY user_id');
+            $stmt = $conn->prepare('SELECT submission_id , SUM(score) AS total_score FROM answers GROUP BY submission_id');
             $stmt->execute();
             $submission_data = $stmt->fetch(PDO::FETCH_ASSOC);
             $total_score += $submission_data['total_score'];
             
+            // create the result
+            $stmt = $conn->prepare('INSERT INTO result(id, total_score, user_id, quiz_id, submission_id) VALUES(?,?,?,?,?)');
+            $stmt->execute([$id, $total_score, $user_id, $quiz_id, $submission_id]); 
+
             // show the result 
-            $stmt = $conn->prepare('SELECT * FROM result WHERE user_id = ?, id = ?');
-            $stmt->execute([$user_id, $result_id]); 
+            $stmt = $conn->prepare('SELECT * FROM result WHERE user_id = ? AND id = ?');
+            $stmt->execute([$user_id, $id]); 
             $result_data = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if($result_data->num_rows > 0 || empty($result_data)){
@@ -83,7 +89,6 @@
                 ]); 
                 exit; 
             }
-
 
             http_response_code(200); 
             echo json_encode([

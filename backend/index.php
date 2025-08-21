@@ -6,6 +6,7 @@
     require __DIR__ . '/src/controller/options.php'; 
     require __DIR__ . '/src/controller/submission.php';
     require __DIR__ . '/src/controller/answer.php';  
+    require __DIR__ . '/src/controller/result.php'; 
 
 
     $method = $_SERVER["REQUEST_METHOD"];
@@ -105,6 +106,9 @@
     }
     else if($method === 'GET' && $path === '/answers/get_all_answers'){
         get_all_answers($conn); 
+    }
+    else if($method === 'GET' && $path === '/result/show_result'){
+        show_result($conn); 
     }
     else{
         http_response_code(404); 

@@ -238,46 +238,46 @@
         }
     }
 
-    // function check_user($conn){
+    function check_user($conn){
 
-    //     $user = authmiddlware(); 
-    //     $user_id = $user['sub']; 
+        $user = authmiddlware(); 
+        $user_id = $user['sub'];
 
-    //     if(!$user_id){
-    //         http_response_code(401); 
-    //         echo json_encode([
-    //             "status" => "error", 
-    //             "message" => "user id not found"
-    //         ]); 
-    //         exit; 
-    //     }
+        if(!$user_id){
+            http_response_code(401); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => "user id not found"
+            ]); 
+            exit; 
+        }
 
-    //     try{
+        try{
 
-    //         $stmt = $conn->prepare('SELECT * FROM users WHERE userId = ?'); 
-    //         $stmt->execute([$user_id]); 
-    //         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-    //         if($user['role'] !== 'user'){
-    //             http_response_code(401); 
-    //             echo json_encode([
-    //                 "status" => "error", 
-    //                 "message" => "this is not the user"
-    //             ]);  
-    //             exit; 
-    //         }
+            $stmt = $conn->prepare('SELECT * FROM users WHERE userId = ?'); 
+            $stmt->execute([$user_id]); 
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    //         return $user; 
-    //     }
-    //     catch(Exception $e){
-    //         http_response_code(500); 
-    //         echo json_encode([
-    //             "status" => "error", 
-    //             "message" => $e->getMessage()
-    //         ]); 
-    //         exit; 
-    //     }
-    // }
+            if($user['role'] !== 'user'){
+                http_response_code(401); 
+                echo json_encode([
+                    "status" => "error", 
+                    "message" => "this is not the user"
+                ]);  
+                exit; 
+            }
+
+            return $user; 
+        }
+        catch(Exception $e){
+            http_response_code(500); 
+            echo json_encode([
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]); 
+            exit; 
+        }
+    }
 
     function check_quiz_for_user($conn){
         $quiz_id = $_GET['quiz_id']; 
