@@ -107,6 +107,9 @@
     else if($method === 'GET' && $path === '/answers/get_all_answers'){
         get_all_answers($conn); 
     }
+    else if($method === 'POST' && $path === '/result/add_result'){
+        add_result($conn); 
+    }
     else if($method === 'GET' && $path === '/result/show_result'){
         show_result($conn); 
     }
