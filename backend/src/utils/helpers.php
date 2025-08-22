@@ -6,6 +6,7 @@
     header("Content-Type: application/json"); 
 
 
+    // generating the user id
     function generateUUID() {
         return sprintf(
             '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
@@ -17,6 +18,7 @@
         );
     }
 
+    // check the this is admin or not
     function roleCheck($conn) {
 
         $auth = authmiddlware();
@@ -68,6 +70,7 @@
         }
     }
 
+    // checking the quiz for the admin
     function check_quiz($conn){
         $user = authmiddlware();
         if($user['role'] === 'admin'){
@@ -115,6 +118,7 @@
 
     }
 
+    // check the question is present or not
     function check_question($conn){
 
         $admin = roleCheck($conn); 
@@ -157,6 +161,7 @@
         }
     }
 
+    // check the options is present or not
     function check_option($conn){
 
         $option_id = $_GET['option_id']; 
@@ -197,6 +202,7 @@
         }
     }
 
+    // check the submission is created or not
     function check_submission($conn){
 
         $submission_id = $_GET['id'];
@@ -238,9 +244,10 @@
         }
     }
 
+    // check the it is user or not  
     function check_user($conn){
 
-        $user = authmiddlware(); 
+        $user = authmiddlware();
         $user_id = $user['sub'];
 
         if(!$user_id){
@@ -279,6 +286,7 @@
         }
     }
 
+    // checking the quiz for the user
     function check_quiz_for_user($conn){
         $quiz_id = $_GET['quiz_id']; 
 

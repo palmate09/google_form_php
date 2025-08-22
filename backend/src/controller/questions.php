@@ -26,7 +26,7 @@
             case $requiredText && !$question_text:
                 $message = 'question text is required'; 
                 break;
-            case !$id & !$requiredText:
+            case !$id && !$requiredText:
                 $message = 'question id is required'; 
                 break; 
         }

@@ -8,14 +8,15 @@
 
     $input = json_encode(file_get_contents('php://input'), true); 
 
+    // this function is used to check weather this id's is received or not if not then give the error
     function result_input_handler($conn, $isRequired = true){
 
-        $id = generateUUID(); 
-        $quiz = check_quiz_for_user($conn);
-        $quiz_id = $quiz['Id'] ?? null;
-        $user = check_user($conn);
+        $id = generateUUID(); // calling the uuid generation from helper
+        $quiz = check_quiz_for_user($conn); // calling to check quiz can be accessed by the user only form helper 
+        $quiz_id = $quiz['Id'] ?? null; 
+        $user = check_user($conn); // calling check_user from helper to check the user is present or not from helper 
         $user_id = $user['userId'] ?? null; 
-        $submission = check_submission($conn);
+        $submission = check_submission($conn); // calling from the helper to check the submission is created or not from helper
         $submission_id = $submission['id'] ?? null;
         
         $message = null; 
@@ -35,7 +36,7 @@
             case $isRequired && !$id:
                 $message = 'id is required to fill'; 
                 break;   
-        }
+        } // this switch is used to check each field should be present if not then give me the error
 
         if($message){
             http_response_code(401); 
@@ -96,7 +97,8 @@
     function show_result($conn){
 
         // $identifier = result_input_handler($conn, false);
-        $user = check_user($conn); 
+        $user = check_user($conn);
+        // $user_id = $identifier['user_id']; 
         $user_id = $user['userId']; 
         $id = $_GET['id'] ?? null;
         
