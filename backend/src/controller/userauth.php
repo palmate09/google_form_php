@@ -60,7 +60,8 @@
             echo json_encode([
                 "status" => "success", 
                 "message" => "Invalid email or password"
-            ]);  
+            ]);
+            exit;
         }
 
         $payload = [
