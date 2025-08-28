@@ -1,23 +1,27 @@
 <?php
 
+    require_once __DIR__ . '/../../vendor/autoload.php'; 
 
     // tests/AuthApiTest.php
 
     use GuzzleHttp\Client;
     use GuzzleHttp\Exception\RequestException;
 
+
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
+    $dotenv->load(); 
+
     // --- Test Setup ---
 
-    function getClient()
-    {
+    function getClient(){
         return new Client(['base_uri' => 'http://localhost:8000', 'http_errors' => false]);
     }
 
     beforeEach(function () {
         $host = '127.0.0.1';
         $db   = 'mydb';
-        $user = 'root';
-        $pass = '@Shubham09';
+        $user = $_ENV['DB_USER'];
+        $pass = $_ENV['DB_PASS'];
         
 
         try {
