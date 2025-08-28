@@ -135,6 +135,22 @@
         expect($body['message'])->toBe("quiz data has been successfully found");
     }); 
 
+    // --- get all quiz tests--- 
+    test('GET /quiz/get_all_quiz fetch all quizzes of specific admin', function(){
+
+        $quiz_response = createQuiz(); 
+        $client = $quiz_response['client']; 
+        $admin = $quiz_response['admin']; 
+        
+        $response = $client->get('/quiz/get_all_quizzes', [
+            "headers" => ["Authorization" => "Bearer ".$admin['token']]
+        ]); 
+
+        expect($response->getStatusCode())->toBe(200); 
+        $body = json_decode($response->getBody()->getContents(), true); 
+        expect($body['status'])->toBe('success');
+    }); 
+
     //--- update quiz tests---
     test('PUT /quiz/update_quiz update a specific quiz', function(){
 
@@ -156,7 +172,7 @@
         expect($updateQuiz->getStatusCode())->toBe(200); 
         $body = json_decode($updateQuiz->getBody()->getContents(), true); 
         expect($body['status'])->toBe('success'); 
-        expect($body['updatedData']['title'])->toBe('my quiz'); 
+        expect($body['data']['title'])->toBe('my quiz'); 
     });
     
     // ---Delete the specific quiz tests--- 

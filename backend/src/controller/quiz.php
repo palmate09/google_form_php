@@ -10,56 +10,56 @@
     $input = json_decode(file_get_contents('php://input'), true);
     
 
-    // input handler helper function 
-    function quiz_input_handler($input){
+    // validate input helper function 
+    function validateInput(array $fields){
+        
+        foreach($fields as $fieldName => $value){
+            if(empty($value)){
+                sendResponse(400, [
+                    "status" => "error", 
+                    "message" => "$fieldName is required to fill"
+                ]); 
+            }
+        }
+    }
 
-        $auth = authmiddlware();
-        $adminId = $auth['sub']; 
-        $title = $input['title']; 
-        $description = $input['description']; 
-        $quizId = generateUUID(); 
-        
-        
+
+    function sendResponse(int $statusCode, array $data){
+        http_response_code($statusCode); 
+        echo json_encode($data); 
+        exit;     
     }
 
     // create the quiz
     // url:- /quiz/new_quiz 
     function newQuiz($conn, $input){
-
-        $auth    = authmiddlware(); 
-        $adminId = $auth['sub']; 
-
-        $title       = $input['title']; 
-        $description = $input['description']; 
-        $quizId      = generateUUID(); 
-
-        if(empty($title) || empty($description) || empty($adminId) || empty($quizId)){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => "title, description, adminId and quizid are required"
-            ]);
-            exit;  
-        }
-
+        
         try{
-            $admin = roleCheck($conn);  
+            $auth    = authmiddlware(); 
+            $adminId = $auth['sub']; 
+            $quizId      = generateUUID(); 
+            $title       = $input['title']; 
+            $description = $input['description']; 
+
+            validateInput([
+                'adminId' => $adminId, 
+                'quizId' => $quizId, 
+                'title' => $title, 
+                'description' => $description
+            ]); 
 
             $stmt = $conn->prepare('INSERT INTO quizzes (Id, creator_id, title, description) VALUES(?, ?, ?, ?)'); 
             $stmt->execute([ $quizId, $adminId, $title, $description]); 
 
-            http_response_code(201); 
-            echo json_encode([
+            sendResponse(201, [
                 "status" => "success", 
-                "creator_id" => $adminId, 
-                "message" => "new quiz has been successfully created"
-            ]);
+                "message" => 'quiz has been successfully created'
+            ]); 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
-                'status' => 'error', 
-                'message' => $e->getMessage()
+            sendResponse(500, [
+                "status" => "error", 
+                "message" => $e->getMessage()
             ]); 
         }
     }
@@ -74,40 +74,55 @@
         $title = $input["title"];
         $description = $input["description"]; 
 
+        validateInput(['admin_id' => $adminId, 'quiz_id' => $id]); 
 
-        if(!$id || (empty($title) && empty($description)) || !$adminId){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error",
-                "message" => "id not found"
-            ]);
-            exit; 
+        $updateFields = [];
+        $params = [];
+
+        if(isset($input['title'])){
+            $updateFields[] = 'title = ?'; 
+            $params[] = $title;  
         }
+
+        if(isset($input['description'])){
+            $updateFields[] = 'description = ?'; 
+            $params[] = $description; 
+        }
+
+        if(empty($updateFields)){
+            sendResponse(400, [
+                "status" => "error", 
+                "message" => 'No fileds to update provided'
+            ]); 
+        }
+
+        $setClause = implode(', ',  $updateFields); 
+
+
+        $params[] = $id; 
+        $params[] = $adminId; 
 
         try{
             //update the quiz
-            $stmt = $conn->prepare('UPDATE quizzes SET title = ? , description = ? WHERE Id = ? AND creator_id = ?');
-            $stmt->execute([$title, $description, $id, $adminId]);
+            $stmt = $conn->prepare("UPDATE quizzes SET $setClause WHERE Id = ? AND creator_id = ?");
+            $stmt->execute($params);
 
             //show the quiz
             $stmt = $conn->prepare('SELECT * FROM quizzes WHERE creator_id = ?');
             $stmt->execute([$adminId]);
             $updatedData = $stmt->fetch(PDO::FETCH_ASSOC); 
 
-            http_response_code(200); 
-            echo json_encode([
+            sendResponse(200, [
                 "status" => "success", 
-                "message" => "quiz data has been successfully updated", 
-                "updatedData" => $updatedData
-            ]);
+                "message" => "quiz has been updated successfully", 
+                "data" => $updatedData
+            ]); 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
-                "status" => "Error",
+            sendResponse(500, [
+                "status" => "error", 
                 "message" => $e->getMessage()
-            ]);
-            exit; 
+            ]); 
         }
     }
 
@@ -117,14 +132,9 @@
 
         $id = $_GET['quiz_id']; 
 
-        if(!$id){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => "id not found"
-            ]);
-            exit; 
-        }
+        validateInput([
+            "quiz_id" => $id
+        ]);
 
         try{
 
@@ -133,28 +143,23 @@
             $quizData = $stmt->fetch(PDO::FETCH_ASSOC); 
 
             if(!is_array($quizData)){
-                http_response_code(400); 
-                echo json_encode([
+                sendResponse(400, [
                     "status" => "error", 
                     "message" => "quiz data not found"
                 ]); 
-                exit; 
             }
 
-            http_response_code(200); 
-            echo json_encode([
+            sendResponse(200, [
                 "status" => "success", 
                 "message" => "quiz data has been successfully found", 
                 "data" => $quizData
-            ]); 
+            ]);  
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
             ]); 
-            exit; 
         }
     }
 
@@ -166,14 +171,9 @@
         $admin = roleCheck($conn); 
         $adminId = $admin["userId"]; 
 
-        if(!$adminId){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => "adminId not found"
-            ]); 
-            exit; 
-        }
+        validateInput([
+            "admin id" => $adminId
+        ]); 
 
         try{
 
@@ -182,29 +182,24 @@
             $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC); 
 
             if(!$quizzes){
-                http_response_code(401); 
-                echo json_encode([
+                sendResponse(400, [
                     "status" => "error", 
-                    "message" => "quizzes not found"
+                    "message" => "quiz data not found"
                 ]); 
-                exit; 
             }
 
-            http_response_code(200); 
-            echo json_encode([
-                "status" => "error", 
+            sendResponse(200, [
+                "status" => "success", 
                 "message" => "Got all the quizzes", 
                 "data" => $quizzes
-            ]); 
+            ]);
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]); 
+            ]);  
         }
-
     }
 
     // delete all the quizzes of specific admin
@@ -214,33 +209,25 @@
         $admin = roleCheck($conn); 
         $adminId = $admin['userId']; 
 
-        if(!$adminId){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => "admin Id not found"
-            ]); 
-            exit; 
-        }
+        validateInput([
+            "admin id" => $adminId
+        ]); 
 
         try{
 
             $stmt = $conn->prepare('DELETE FROM quizzes WHERE creator_id = ?');
             $stmt->execute([$adminId]); 
             
-            http_response_code(200); 
-            echo json_encode([
+            sendResponse(200, [
                 "status" => "success",  
                 "message" => "quizzes have been successfully deleted"
-            ]); 
-
+            ]);  
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]);
+            ]); 
         }
     }
 
