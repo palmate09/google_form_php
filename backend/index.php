@@ -41,6 +41,9 @@
     else if($method === 'GET'  && $path === '/quiz/get_quiz'){
         getQuiz($conn); 
     }
+    else if($method === 'GET' && $path === '/quiz/get_quiz_everyone'){
+        get_quiz($conn); 
+    }
     else if($method === 'PUT' && $path === '/quiz/update_quiz'){
         updateQuiz($conn, $input); 
     }

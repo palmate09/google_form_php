@@ -7,8 +7,20 @@
     header("Content-Type: application/json");
 
 
-    $input = json_encode(file_get_contents('php://input'), true);
+    $input = json_decode(file_get_contents('php://input'), true);
     
+
+    // input handler helper function 
+    function quiz_input_handler($input){
+
+        $auth = authmiddlware();
+        $adminId = $auth['sub']; 
+        $title = $input['title']; 
+        $description = $input['description']; 
+        $quizId = generateUUID(); 
+        
+        
+    }
 
     // create the quiz
     // url:- /quiz/new_quiz 
@@ -145,6 +157,7 @@
             exit; 
         }
     }
+
 
     // get all the quizzes of specific admin
     // url :- /quiz/get_all_quizzes

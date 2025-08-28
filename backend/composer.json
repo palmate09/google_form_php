@@ -17,7 +17,8 @@
         "phpmailer/phpmailer": "^6.10"
     },
     "require-dev": {
-        "pestphp/pest": "^3.8"
+        "pestphp/pest": "^4.0",
+        "guzzlehttp/guzzle": "^7.10"
     },
     "config": {
         "allow-plugins": {

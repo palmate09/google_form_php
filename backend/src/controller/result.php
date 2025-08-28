@@ -96,9 +96,7 @@
     // show the result
     function show_result($conn){
 
-        // $identifier = result_input_handler($conn, false);
         $user = check_user($conn);
-        // $user_id = $identifier['user_id']; 
         $user_id = $user['userId']; 
         $id = $_GET['id'] ?? null;
         

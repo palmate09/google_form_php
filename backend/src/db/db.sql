@@ -1,4 +1,3 @@
-
 create table users(
     userId         varchar(36)  PRIMARY KEY, 
     username       varchar(255), 
