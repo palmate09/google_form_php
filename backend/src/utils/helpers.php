@@ -72,50 +72,36 @@
 
     // checking the quiz for the admin
     function check_quiz($conn){
-        $user = authmiddlware();
-        if($user['role'] === 'admin'){
-            $admin_id = $user['sub'];
-        }
+        $admin = roleCheck($conn); 
+        $adminId = $admin['userId'];  
         $quiz_id = $_GET['quiz_id'];
         
-        $identifier = $admin_id || $quiz_id; 
+        validateInput([
+            "admin id" => $adminId, 
+            "quiz id" => $quiz_id
+        ]);  
 
-        if(!$identifier){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => "admin_id or quiz_id not found"
-            ]); 
-            exit; 
-        }
 
         try{
-            
             $stmt = $conn->prepare('SELECT * FROM quizzes WHERE Id = ? AND creator_id = ?');
-            $stmt->execute([$quiz_id, $admin_id]); 
+            $stmt->execute([$quiz_id, $adminId]); 
             $quiz = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if(!$quiz){
-                http_response_code(401); 
-                echo json_encode([
+                sendResponse(400, [
                     "status" => "error", 
                     "message" => "Quiz not found"
-                ]);
-                exit; 
+                ]);  
             }
 
             return $quiz; 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]); 
-            exit; 
+            ]);  
         }
-
-
     }
 
     // check the question is present or not
@@ -123,8 +109,8 @@
 
         $admin = roleCheck($conn); 
         $admin_id = $admin['userId'];  
-        $question_id = $_GET['question_id'];  
-
+        $question_id = $_GET['question_id']; 
+        
         if(!$question_id){
             http_response_code(401); 
             echo json_encode([

@@ -8,52 +8,20 @@
     header("Content-Type: application/json");
 
 
-    $input = json_encode(file_get_contents('php://input'), true); 
-
-    // input handling and finding the error
-    function input_handler($conn, $input, $requiredText = true){
-
-        $quiz = check_quiz($conn);
-        $quiz_id = $quiz['Id'] ?? null;
-        $question_text = $input['question_text'] ?? null;
-        $id = $_GET['question_id'] ?? null;
-        
-        $message = null; 
-        switch(true){
-            case !$quiz_id:
-                $message = 'quiz id is required'; 
-                break; 
-            case $requiredText && !$question_text:
-                $message = 'question text is required'; 
-                break;
-            case !$id && !$requiredText:
-                $message = 'question id is required'; 
-                break; 
-        }
-
-        if(!empty($message)){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => $message
-            ]); 
-            exit; 
-        }
-        
-        return [
-            'quiz_id'=>$quiz_id,
-            'question_text'=>$question_text,
-            'question_id' => $id
-        ]; 
-    }
+    $input = json_encode(file_get_contents('php://input'), true);
     
+
     //create the question
     //url:- /question/new_question
     function create_question($conn, $input){
+        $quiz = check_quiz($conn); 
+        $quiz_id = $quiz['Id']; 
+        $question_text = $input['question_text']; 
 
-        $identifier = input_handler($conn, $input, true); 
-        $quiz_id = $identifier['quiz_id']; 
-        $question_text = $identifier['question_text']; 
+        validateInput([
+            "quiz id" => $quiz_id, 
+            "question text" => $question_text
+        ]); 
 
         try{
 
@@ -61,27 +29,22 @@
             $stmt->execute([$quiz_id, $question_text]);  
 
             if($stmt->rowCount() === 0){
-                http_response_code(401); 
-                echo json_encode([
+                sendResponse(400, [
                     "status" => "error", 
                     "message" => "question is not created"
-                ]); 
-                exit; 
+                ]);  
             }
 
-            http_response_code(201); 
-            echo json_encode([
+            sendResponse(201, [
                 "status" => "success", 
                 "message" => "question has been successfully created"
-            ]); 
+            ]);  
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]); 
-            exit; 
+            ]);  
         }
     }
 
@@ -89,11 +52,16 @@
     // url:- /question/update_question 
     function update_question($conn, $input){
 
-        $identifier = input_handler($conn, $input, true); 
-        $quiz_id = $identifier['quiz_id']; 
-        $question_text = $identifier['question_text']; 
-        $id = $identifier['question_id']; 
-
+        $quiz = check_quiz($conn); 
+        $quiz_id = $quiz['Id'];  
+        $question_text = $input['question_text']; 
+        $id = $_GET['question_id'];
+        
+        validateInput([
+            "quiz id" => $quiz_id, 
+            "question text" => $question_text, 
+            "question id" => $id 
+        ]); 
     
         try{
             // update the question 
@@ -105,30 +73,31 @@
             $stmt->execute([$quiz_id, $id]); 
             $question = $stmt->fetch(PDO::FETCH_ASSOC); 
 
-            http_response_code(201); 
-            echo json_encode([
+            sendResponse(200, [
                 'status'  => 'success', 
                 'message' => 'question data have been updated successfully!',
                 "data" => $question
-            ]);
-            exit; 
+            ]);  
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status"  => "error", 
                 "message" => $e->getMessage()
             ]); 
-            exit; 
         }
     }
 
     // get the question
     // url:- /question/get_question 
     function get_question($conn){
-        $identifier = input_handler($conn, $input, false);
-        $quiz_id = $identifier['quiz_id'];  
-        $id = $identifier['question_id'];
+        $quiz = check_quiz($conn); 
+        $quiz_id = $quiz['Id'];  
+        $id = $_GET['question_id'];
+
+        validateInput([
+            "quiz id" => $quiz_id, 
+            "question id" => $id
+        ]); 
 
         try{
 
@@ -136,78 +105,60 @@
             $stmt->execute([$id, $quiz_id]); 
             $question = $stmt->fetch(PDO::FETCH_ASSOC); 
 
-            if(!$question){
-                http_response_code(401); 
-                echo json_encode([
-                    "status" => "error", 
-                    "message" => "question not recieved"
-                ]);
-                exit; 
-            }
-
-            http_response_code(200); 
-            echo json_encode([
+            sendResponse(200, [
                 "status" => "success", 
                 "message" => "question of this id:- $id has been successfully received", 
                 "data" => $question
-            ]); 
+            ]);  
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]); 
-            exit; 
+            ]);  
         }
     }
 
     // get all the questions
     // url:- /question/get_all_question
     function get_all_questions($conn){
-
-        $identifier = input_handler($conn, $input, false); 
-        $quiz_id = $identifier['quiz_id']; 
+        $quiz = check_quiz($conn); 
+        $quiz_id = $quiz['Id'];
+        
+        validateInput([
+            "quiz id" => $quiz_id
+        ]); 
 
         try{
-
             $stmt = $conn->prepare('SELECT * FROM questions WHERE quiz_id = ?'); 
             $stmt->execute([$quiz_id]); 
             $questions_data = $stmt->fetchAll(PDO::FETCH_ASSOC); 
 
-            if(!$questions_data){
-                http_response_code(401); 
-                echo json_encode([
-                    "status"  => "error", 
-                    "message" => "questions not recieved"
-                ]);
-                exit; 
-            }
-
-            http_response_code(200); 
-            echo json_encode([
+            sendResponse(200, [
                 "status" => "success", 
                 "message" => "questions of this quiz id :- $quiz_id are recieved succesfully", 
                 "data" => $questions_data
-            ]); 
+            ]);  
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]); 
-            exit; 
+            ]);  
         }
     }
 
     //delete the particular question of the quiz
     // url:- /question/delete_question 
     function delete_question($conn){
+        $quiz = check_quiz($conn);  
+        $quiz_id = $quiz['Id']; 
+        $id = $_GET['question_id']; 
 
-        $identifier = input_handler($conn, $input, false); 
-        $id = $identifier['question_id']; 
-        $quiz_id = $identifier['quiz_id']; 
+        validateInput([
+            "quiz id"=>$quiz_id, 
+            "question id" => $id
+        ]); 
 
         try{
 
@@ -216,36 +167,34 @@
             $question = $stmt->fetch(PDO::FETCH_ASSOC); 
 
             if($question){
-                http_response_code(401); 
-                echo json_encode([
+                sendResponse(401, [
                     "status" => "error", 
                     "message" => "question of id :- $id is not deleted"
-                ]);
-                exit; 
+                ]);  
             }
             
-            http_response_code(200); 
-            echo json_encode([
+            sendResponse(200, [
                 "status" => "success", 
                 "message" => "question of id:- $id is deleted successfully"
-            ]);
+            ]); 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]); 
-            exit; 
+            ]);  
         }
     }
 
     // delete all the questions
     // url:- /question/delete_all_question
     function delete_all_question($conn){
-
-        $identifier = input_handler($conn, $input, false); 
-        $quiz_id = $identifier['quiz_id']; 
+        $quiz = check_quiz($conn); 
+        $quiz_id = $quiz['Id'];
+        
+        validateInput([
+            "quiz id" => $quiz_id
+        ]);
 
         try{
 
@@ -255,30 +204,17 @@
             $stmt = $conn->prepare('SELECT * FROM questions WHERE quiz_id = ?');
             $stmt->execute([$quiz_id]);
             $question = $stmt->fetchAll(PDO::FETCH_ASSOC);  
-
-            if(!empty($question)){
-                http_response_code(401); 
-                echo json_encode([
-                    "status" => "error", 
-                    "message" => "questions of this quiz id :- $quiz_id not deleted"
-                ]); 
-                exit; 
-            }
             
-            http_response_code(200); 
-            echo json_encode([
+            sendResponse(200, [
                 "status" => "success", 
                 "message" => "question of this quiz id :- $quiz_id are deleted successfully" 
-            ]); 
-
+            ]);  
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]); 
-            exit; 
+            ]);  
         }
     }
 ?>
