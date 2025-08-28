@@ -239,34 +239,25 @@
         $admin = roleCheck($conn); 
         $admin_id = $admin['userId'];
 
-        $identifier = $id ?? $admin_id; 
-
-        if(!$identifier){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error",
-                "message" => "$identifier is not defiend"
-            ]);
-            exit; 
-        }
-
+        validateInput([
+            "quiz id"=>$id, 
+            "admin id" => $admin_id
+        ]); 
+        
         try{
             $stmt = $conn->prepare('DELETE FROM quizzes WHERE Id = ? AND creator_id = ?');
             $stmt->execute([$id, $admin_id]);
 
-            http_response_code(200); 
-            echo json_encode([
+            sendResponse(200, [
                 "status" => "success", 
                 "message" => "Users data has been deleted Successfully"
-            ]);
+            ]); 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]);
-            exit; 
+            ]);  
         }
     }
 ?>
