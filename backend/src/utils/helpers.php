@@ -186,16 +186,11 @@
     // check the submission is created or not
     function check_submission($conn){
 
-        $submission_id = $_GET['id'];
+        $submission_id = $_GET['submission_id'];
         
-        if(!$submission_id){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error",
-                "message" => "quiz id is not received"
-            ]);
-            exit; 
-        }
+        validateInput([
+            "submission id" => $submission_id
+        ]); 
 
         try{
 
@@ -203,25 +198,21 @@
             $stmt->execute([$submission_id]);
             $submission_data = $stmt->fetch(PDO::FETCH_ASSOC); 
 
-            if(!$submission_data){
-                http_response_code(401); 
-                echo json_encode([
+            if(empty($submission_data)){
+                sendResponse(401, [
                     "status" => "error", 
                     "message" => "submission data not found"
-                ]);
-                exit; 
+                ]); 
             }
 
             return $submission_data;
 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
             ]); 
-            exit; 
         }
     }
 
@@ -231,14 +222,9 @@
         $user = authmiddlware();
         $user_id = $user['sub'];
 
-        if(!$user_id){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => "user id not found"
-            ]); 
-            exit; 
-        }
+        validateInput([
+            "user id" => $user_id
+        ]); 
 
         try{
 
@@ -247,23 +233,19 @@
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if($user['role'] !== 'user'){
-                http_response_code(401); 
-                echo json_encode([
+                sendResponse(401, [
                     "status" => "error", 
                     "message" => "this is not the user"
-                ]);  
-                exit; 
+                ]); 
             }
 
             return $user; 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
             ]); 
-            exit; 
         }
     }
 
@@ -271,14 +253,9 @@
     function check_quiz_for_user($conn){
         $quiz_id = $_GET['quiz_id']; 
 
-        if(!$quiz_id){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => "user_id or quiz_id not found"
-            ]); 
-            exit; 
-        }
+        validateInput([
+            "quiz id" => $quiz_id
+        ]); 
         
         try{
 
@@ -288,24 +265,20 @@
             
 
             if(empty($quiz)){
-                http_response_code(400); 
-                json_encode([
+                sendResponse(401, [
                     "status" => "error", 
                     "message" => "quiz not found"
                 ]); 
-                exit; 
             }
 
             return $quiz; 
 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
             ]); 
-            exit; 
         }
     }
 ?>

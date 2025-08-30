@@ -35,6 +35,7 @@
             $conn->exec("TRUNCATE TABLE quizzes;");
             $conn->exec("TRUNCATE TABLE questions;");
             $conn->exec("TRUNCATE TABLE options;");
+            $conn->exec("TRUNCATE TABLE submissions;");
             $conn->exec("SET FOREIGN_KEY_CHECKS = 1;");
 
         } catch (\PDOException $e) {
@@ -53,6 +54,33 @@
             'email' => $email,
             'password' => 'password123',
             'role' => 'admin'
+        ]]);
+
+        $loginResponse = $client->post('/login', ['json' => [
+            'email' => $email,
+            'password' => 'password123'
+        ]]);
+
+        $loginBody = json_decode($loginResponse->getBody()->getContents(), true);
+        $tokenParts = explode('.', $loginBody['token']);
+        $payload = json_decode(base64_decode($tokenParts[1]), true);
+
+        return [
+            'client' => $client,
+            'token' => $loginBody['token'],
+            'id' => $payload['sub']
+        ];
+    }
+
+    function createAndLoginUser(){
+        $client = getClient(); 
+        $email = 'user_' . uniqid() . '@example.com';
+
+        $client->post('/register', ['json' => [
+            'username' => 'testuser' . uniqid(),
+            'email' => $email,
+            'password' => 'password123',
+            'role' => 'user'
         ]]);
 
         $loginResponse = $client->post('/login', ['json' => [
@@ -196,6 +224,7 @@
         });
     });
 
+
     describe('Question API', function () {
         beforeEach(function () {
             $this->admin = createAndLoginAdmin();
@@ -247,7 +276,6 @@
             expect($response->getStatusCode())->toBe(200);
         });
     });
-
 
 
     describe('Option API', function () {
@@ -326,6 +354,103 @@
         });
     });
 
-    
+
+    describe('Submission Api', function(){
+        beforeEach(function () {
+            $this->client = getClient();
+
+            // ---- Admin setup for quiz ----
+            $admin = createAndLoginAdmin();
+            $this->adminToken = $admin['token'];
+
+            // Create a quiz for the user
+            $quizRes = $this->client->post('/quiz/new_quiz', [
+                'headers' => ["Authorization" => "Bearer " . $this->adminToken],
+                'json' => [
+                    "title" => "Test Quiz",
+                    "description" => "Quiz for submission test"
+                ]
+            ]);
+
+            $getAllQuizzes = $this->client->get('/quiz/get_all_quizzes', [
+                "headers" => ["Authorization" => "Bearer ".$this->adminToken]
+            ]); 
+
+            $response = json_decode($getAllQuizzes->getBody()->getContents(), true);
+            $this->quizId = $response['data'][0]['Id'];
+
+            // ---- Normal user setup ----
+            $user = createAndLoginUser();
+            $this->userClient = $user['client'];
+            $this->userToken = $user['token'];
+        });
+
+        test('POST /submission/add_submission creates a new submission', function () {
+            $response = $this->userClient->post("/submissions/add_submission?quiz_id={$this->quizId}", [
+                'headers' => ["Authorization" => "Bearer " . $this->userToken]
+            ]);
+
+            expect($response->getStatusCode())->toBe(201);
+            $body = json_decode($response->getBody(), true);
+            expect($body['status'])->toBe("success");
+            expect($body['message'])->toBe("submission is added or started successfully");
+        });
+
+        test('GET /submission/get_submission returns all submissions for user', function () {
+
+            $this->userClient->post("/submissions/add_submission?quiz_id={$this->quizId}", [
+                "headers" => ["Authorization" => "Bearer ". $this->userToken]
+            ]); 
+
+            $response = $this->userClient->get('/submissions/get_submission', [
+                'headers' => ["Authorization" => "Bearer " . $this->userToken]
+            ]);
+
+            expect($response->getStatusCode())->toBe(200);
+            $body = json_decode($response->getBody(), true);
+            expect($body['status'])->toBe("success");
+            expect($body['data'])->toBeArray();
+            expect(count($body['data']))->toBeGreaterThan(0);
+        });
+
+        test('GET /submission/get_particular_submission returns single submission', function () {
+            $createRes = $this->userClient->post("/submissions/add_submission?quiz_id={$this->quizId}", [
+                'headers' => ["Authorization" => "Bearer " . $this->userToken],
+            ]);
+
+            $created = json_decode($createRes->getBody(), true);
+
+            $allRes = $this->userClient->get('/submissions/get_submission', [
+                'headers' => ["Authorization" => "Bearer " . $this->userToken]
+            ]);
+
+            $all = json_decode($allRes->getBody(), true);
+            $submissionId = $all['data'][0]['id'];
+ 
+
+            $response = $this->userClient->get("/submissions/get_particular_submission?submission_id={$submissionId}", [
+                'headers' => ["Authorization" => "Bearer " . $this->userToken]
+            ]);
+
+            expect($response->getStatusCode())->toBe(200);
+            $body = json_decode($response->getBody(), true);
+            expect($body['status'])->toBe("success");
+            expect($body['data']['id'])->toBe($submissionId);
+        });
+
+        test('GET /submission/get_particular_submission fails for invalid submission id', function () {
+            $response = $this->userClient->get("/submissions/get_particular_submission?id=invalid-id", [
+                'headers' => ["Authorization" => "Bearer " . $this->userToken]
+            ]);
+
+            expect($response->getStatusCode())->toBe(400);
+            $body = json_decode($response->getBody(), true);
+            expect($body['status'])->toBe("error");
+        });
+    }); 
+
+
+
+
 
 
