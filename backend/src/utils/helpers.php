@@ -109,41 +109,36 @@
 
         $admin = roleCheck($conn); 
         $admin_id = $admin['userId'];  
+        $quiz = check_quiz($conn);
+        $quiz_id = $quiz['Id'];  
         $question_id = $_GET['question_id']; 
         
-        if(!$question_id){
-            http_response_code(401); 
-            echo json_encode([
-                "status" => "error", 
-                "message" => "question_id not found"
-            ]);
-            exit; 
-        }
+        validateInput([
+            "admin id" => $admin_id, 
+            "quiz id" => $quiz_id, 
+            "question id" => $question_id
+        ]); 
+
 
         try{
-
-            $stmt = $conn->prepare('SELECT * FROM questions WHERE Id = ?');
-            $stmt->execute([$question_id]); 
+            $stmt = $conn->prepare('SELECT * FROM questions WHERE Id = ? AND quiz_id = ?');
+            $stmt->execute([$question_id, $quiz_id]); 
             $question_data = $stmt->fetch(PDO::FETCH_ASSOC); 
 
-            if(!$question_data){
-                http_response_code(401); 
-                echo json_encode([
+            if(empty($question_data)){
+                sendResponse(401, [
                     "status" => "error", 
                     "message" => "questions data not found"
-                ]);
-                exit; 
+                ]); 
             }
 
             return $question_data; 
         }
         catch(Exception $e){
-            http_response_code(500); 
-            echo json_encode([
+            sendResponse(500, [
                 "status" => "error", 
                 "message" => $e->getMessage()
-            ]); 
-            exit; 
+            ]);
         }
     }
 
