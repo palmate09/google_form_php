@@ -14,7 +14,7 @@
 
         $user = check_user($conn);
         $user_id = $user['userId']; 
-        $id = $_GET['id'];
+        $id = $_GET['result_id'];
 
         validateInput([
             "result id" => $id
@@ -65,6 +65,31 @@
                 "status" => "error", 
                 "message" => $e->getMessage()
             ]); 
+        }
+    }
+
+    // get all the result of particular user
+    function show_all_result($conn){
+        $user = check_user($conn); 
+        $user_id = $user['userId']; 
+
+        try{
+
+            $stmt = $conn->prepare('SELECT * FROM result WHERE user_id = ?'); 
+            $stmt->execute([$user_id]); 
+            $resultData = $stmt->fetchAll(PDO::FETCH_ASSOC); 
+
+            sendResponse(200, [
+                "status" => "success", 
+                "message" => "results data has been successfully received", 
+                "data" => $resultData 
+            ]); 
+        }
+        catch(Exception $e){
+            sendResponse(500, [
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]);
         }
     }
 ?>

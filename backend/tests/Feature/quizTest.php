@@ -37,6 +37,7 @@
             $conn->exec("TRUNCATE TABLE options;");
             $conn->exec("TRUNCATE TABLE submissions;");
             $conn->exec("TRUNCATE TABLE answers;");
+            $conn->exec("TRUNCATE TABLE result");
             $conn->exec("SET FOREIGN_KEY_CHECKS = 1;");
 
         } catch (\PDOException $e) {
@@ -224,7 +225,7 @@
                 expect($response->getStatusCode())->toBe(200);
             });
         });
-    })->skip();
+    });
 
 
     describe('Question API', function () {
@@ -277,7 +278,7 @@
             $response = $this->client->delete("/question/delete_all_question?quiz_id={$this->quiz_id}", ["headers" => ["Authorization" => "Bearer " . $this->admin['token']]]);
             expect($response->getStatusCode())->toBe(200);
         });
-    })->skip();
+    });
 
 
     describe('Option API', function () {
@@ -354,15 +355,14 @@
                 expect($response->getStatusCode())->toBe(200);
             });
         });
-    })->skip();
+    });
 
     describe('Response API', function(){
         beforeEach(function(){
             $this->admin = createAndLoginAdmin();
-            $ids = getOptionIds($this->admin); 
+            $ids = getQuestionIds($this->admin); 
             $this->quizId = $ids['quiz_id'];
             $this->questionId = $ids['question_id'];
-            $this->optionId = $ids['option_id'];  
             // user 
             $this->user = createAndLoginUser(); 
             $this->client = $this->user['client'];
@@ -380,16 +380,149 @@
         });
         
         test('POST /response/addResponse add the response for the quiz', function(){
+
+            // add some options for the question 
+            $this->admin['client']->post("/option/add_option?quiz_id={$this->quizId}&question_id={$this->questionId}", [
+                "headers" => ["Authorization" => "Bearer " . $this->admin['token']],
+                "json" => ["option_text" => "mumbai", "is_correct" => 1]
+            ]);
+
+            $this->admin['client']->post("/option/add_option?quiz_id={$this->quizId}&question_id={$this->questionId}", [
+                "headers" => ["Authorization" => "Bearer " . $this->admin['token']],
+                "json" => ["option_text" => "London", "is_correct" => 0]
+            ]);
+
+            $getAllOptions = $this->admin['client']->get("/option/get_all_option?quiz_id={$this->quizId}&question_id={$this->questionId}", [
+                "headers" => ["Authorization" => "Bearer " . $this->admin['token']]
+            ]);
+
+            $responses = json_decode($getAllOptions->getBody(), true); 
+            
+
+            $ans = [];
+            foreach($responses['data'] as $response){
+                $ans[] = $response['Id'];
+            }
+
+            $options = array_values($ans); 
+
             // add the response for quiz;
             $newResponse = $this->client->post("/response/addResponse?quiz_id={$this->quizId}", [
                 "headers" => ["Authorization" => "Bearer ".$this->userToken], 
-                "json" => ["optionIds" => $this->optionId]
+                "json" => ["optionIds" => $options]
             ]);
             
-            expect($newResponse->getStatusCode())->toBe(201); 
-        }); 
+            expect($newResponse->getStatusCode())->toBe(201);
+            $body = json_decode($newResponse->getBody(), true); 
+        });
+        
+        describe('Result API', function(){
+            beforeEach(function(){                
 
-    }); 
+                // add some options for the question 
+                $this->admin['client']->post("/option/add_option?quiz_id={$this->quizId}&question_id={$this->questionId}", [
+                    "headers" => ["Authorization" => "Bearer " . $this->admin['token']],
+                    "json" => ["option_text" => "mumbai", "is_correct" => 1]
+                ]);
+
+                $this->admin['client']->post("/option/add_option?quiz_id={$this->quizId}&question_id={$this->questionId}", [
+                    "headers" => ["Authorization" => "Bearer " . $this->admin['token']],
+                    "json" => ["option_text" => "London", "is_correct" => 0]
+                ]);
+
+                $getAllOptions = $this->admin['client']->get("/option/get_all_option?quiz_id={$this->quizId}&question_id={$this->questionId}", [
+                    "headers" => ["Authorization" => "Bearer " . $this->admin['token']]
+                ]);
+
+                $responses = json_decode($getAllOptions->getBody(), true); 
+                
+
+                $ans = [];
+                foreach($responses['data'] as $response){
+                    $ans[] = $response['Id'];
+                }
+
+                $options = array_values($ans); 
+
+                // add the response for quiz;
+                $this->client->post("/response/addResponse?quiz_id={$this->quizId}", [
+                    "headers" => ["Authorization" => "Bearer ".$this->userToken], 
+                    "json" => ["optionIds" => $options]
+                ]);
+
+                $this->response = $this->client->get("/response/showResponse?quiz_id={$this->quizId}", [
+                    "headers" => ["Authorization" => "Bearer ".$this->admin['token']]
+                ]);
+
+                
+                expect($this->response->getStatusCode())->toBe(200); 
+                $body = json_decode($this->response->getBody(), true);
+                
+
+                $this->submission_id = $body['data']['submission_id']; 
+                $this->result_id = $body['data']['result']['result_id']; 
+                $this->answer_id = $body['data']['answers'][0]['answer_id'];
+            }); 
+
+            test('GET /result/show_all_result fetches all the result associated with user',function(){
+                $response = $this->client->get("/result/show_all_result", [
+                    "headers" => ["Authorization" => "Bearer ".$this->userToken]
+                ]); 
+
+                expect($response->getStatusCode())->toBe(200); 
+            });
+            
+            test('GET /result/show_result fetches the particular result of quiz', function(){ 
+
+                $response = $this->client->get("/result/show_result?result_id={$this->result_id}", [
+                    "headers" => ["Authorization" => "Bearer ".$this->userToken]
+                ]);
+
+                expect($response->getStatusCode())->toBe(200); 
+            });
+
+            test('GET /submission/get_submission fetches all submissions for the user',function(){
+
+                $response = $this->client->get("/submissions/get_submission",[
+                    "headers" => ["Authorization" => "Bearer ".$this->userToken]
+                ]);
+
+                expect($response->getStatusCode())->toBe(200); 
+            }); 
+
+            test('GET /submission/get_particular_submission fetches particular submission ', function(){
+
+                $response = $this->client->get("/submissions/get_particular_submission?submission_id={$this->submission_id}", [
+                    "headers" => ["Authorization" => "Bearer ".$this->userToken]
+                ]); 
+
+                expect($response->getStatusCode())->toBe(200); 
+            }); 
+
+            test('GET /answers/get_answer fethces particular answer', function(){
+                $response = $this->client->get("/answers/get_answer?submission_id={$this->submission_id}&answer_id={$this->answer_id}", [
+                    "headers" => ["Authorization" => "Bearer ".$this->userToken]
+                ]); 
+
+                expect($response->getStatusCode())->toBe(200); 
+            }); 
+
+            test('GET /answers/get_all_answers fetches all answers of particular quiz', function(){
+
+                $response = $this->client->get("/answers/get_all_answers?submission_id={$this->submission_id}", [
+                    "headers" => ["Authorization" => "Bearer ".$this->userToken]
+                ]); 
+
+                expect($response->getStatusCode())->toBe(200);
+            }); 
+        });
+    });
+
+
+     
+
+
+     
 
     
 

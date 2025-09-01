@@ -6,37 +6,11 @@
 
     $input = json_encode(file_get_contents('php://input'), true); 
 
-
-    function add_submission($conn){
-
-        // $identifier = submission_input_handler($conn);
-        $id = generateUUID();  
-        $quiz_id = check_quiz_for_user($conn)['Id'];
-        $user_id = check_user($conn)['userId']; 
-
-        try{
-
-            $stmt = $conn->prepare("INSERT INTO submissions(id, quiz_id, user_id) VALUES(?,?,?)");
-            $stmt->execute([$id, $quiz_id, $user_id]); 
-
-            sendResponse(201, [
-                "status" => "success",
-                "message" => "submission is added or started successfully"
-            ]);
-        }
-        catch(Exception $e){
-            sendResponse(500, [
-                "status" => "error", 
-                "message" => $e->getMessage()
-            ]);
-        }
-    }
     
     // get all the submissions for the user
     // url :- /submission/get_submission
     function get_submission($conn){
 
-        // $identifier = submission_input_handler($conn); 
         $user_id = check_user($conn)['userId']; 
         
         try{

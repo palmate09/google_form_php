@@ -51,6 +51,9 @@
     else if($method === 'GET' && $path === '/quiz/showQuiz'){
         showQuiz($conn, $input); 
     }
+    else if($method === 'GET' && $path === '/response/showResponse'){
+        showResponse($conn); 
+    }
     else if($method === 'GET' && $path === '/quiz/get_all_quizzes'){
         getAllQuizzes($conn); 
     }
@@ -105,9 +108,6 @@
     else if($method === 'GET' && $path === '/submissions/get_particular_submission'){
         get_particular_submission($conn); 
     }
-    else if($method === 'POST' && $path === '/answers/add_answer'){
-        add_answer($conn, $input); 
-    }
     else if($method === 'GET' && $path === '/answers/get_answer'){
         get_answer($conn); 
     }
@@ -116,6 +116,9 @@
     }
     else if($method === 'GET' && $path === '/result/show_result'){
         show_result($conn); 
+    }
+    else if($method === 'GET' && $path === '/result/show_all_result'){
+        show_all_result($conn); 
     }
     else{
         http_response_code(404); 

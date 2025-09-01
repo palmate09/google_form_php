@@ -89,7 +89,6 @@
         }
     }
 
-
     // add the response for the question of the quiz by the user only 
     // /response/addResponse/:quizId/:questionId/
     // here i am giving the option_id as the input so then i will check weather it is correct or not
@@ -130,11 +129,11 @@
             foreach($optionIds as $optionId){
                 $stmt = $conn->prepare('SELECT question_id, is_correct FROM options WHERE id = ?'); 
                 $stmt->execute([$optionId]); 
-                $row = $stmt->fetch(PDO::FETCH_ASSOC); 
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if(!$row) continue; 
 
-                $questionId = $row['question_id']; 
+                $questionId = $row['question_id'];
                 $score = $row['is_correct'] ? 1 : -1; 
                 $totalScore += $score;
                 
@@ -149,11 +148,11 @@
 
             // bulk insert answers; 
             $stmtInsert = $conn->prepare("
-                INSERT INTO answers (submission_id, question_id, option_id, score) VALUES (?,?,?,?)
+                INSERT INTO answers(question_id, option_id, score, submission_id) VALUES (?,?,?,?)
             ");
 
             foreach($answerData as $a){
-                $stmtInsert->execute([$a["submission_id"], $a["question_id"], $a["option_id"], $a["score"]]); 
+                $stmtInsert->execute([$a["question_id"], $a["option_id"], $a["score"],$a["submission_id"]]); 
             }
 
             // insert total score in the result table
@@ -165,7 +164,7 @@
 
             sendResponse(201, [
                 "status" => "success", 
-                "message" => "Quiz has been successfully submitted"
+                "message" => "Quiz has been successfully submitted"    
             ]); 
         }
         catch(Exception $e){
@@ -173,6 +172,74 @@
                 "status" => "error", 
                 "message" => $e->getMessage()
             ]); 
+        }
+    }
+
+    // /response/showResponse
+    // show the response
+    function showResponse($conn){
+        $quiz_id = check_quiz_for_user($conn)['Id']; 
+
+        try{
+            // get submission id from quiz id 
+            $sql = "SELECT
+                        q.id AS quiz_id,
+                        q.title,
+                        s.id AS submission_id,
+                        r.id AS result_id,
+                        r.total_score,
+                        ans.id AS answer_id,
+                        ans.score
+                    FROM quizzes q
+                    LEFT JOIN submissions s ON s.quiz_id = q.id
+                    LEFT JOIN result r ON r.submission_id = s.id
+                    LEFT JOIN answers ans ON ans.submission_id = s.id  
+                    WHERE q.id = ? ";
+
+            
+            $stmt = $conn->prepare($sql); 
+            $stmt->execute([$quiz_id]); 
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC); 
+
+            if(empty($data)){
+                sendResponse(400, [
+                    "status" => "Error", 
+                    "message" => "quiz not found"
+                ]); 
+                return ; 
+            }
+            
+            $quiz = [
+                "quiz_id" => $data[0]["quiz_id"], 
+                "title" => $data[0]["title"], 
+                "submission_id" => $data[0]["submission_id"],
+                "result" => [
+                    "result_id" => $data[0]["result_id"], 
+                    "total_score" => $data[0]["total_score"]
+                ],
+                "answers" => []
+            ];
+
+            $answers = [];
+            foreach ($data as $row) {
+                $answers[] = [
+                    "answer_id" => $row["answer_id"],
+                    "score"     => $row["score"]
+                ];
+            }
+
+            $quiz['answers'] = array_values($answers); 
+
+            sendResponse(200, [
+                "status" => "success", 
+                "data" => $quiz 
+            ]); 
+        }
+        catch(Exception $e){
+            sendResponse(500, [
+                "status" => "error", 
+                "message" => $e->getMessage()
+            ]);
         }
     }
 

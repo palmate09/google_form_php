@@ -13,12 +13,13 @@
         $question_id = $question['Id']; 
         $quiz_id = $question['quiz_id']; 
         $option_text = $input['option_text']; 
-        $is_correct  =  $input['is_correct'];
+        $is_correct  = $input['is_correct'] ?? 0;
+        $is_correct = filter_var($is_correct, FILTER_VALIDATE_BOOLEAN) ? 1:0; 
+
 
         validateInput([
             "question id" => $question_id, 
-            "option text" => $option_text, 
-            "option choice" => $is_correct, 
+            "option text" => $option_text,  
             "quiz id" => $quiz_id
         ]); 
         
