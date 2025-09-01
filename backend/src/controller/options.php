@@ -110,9 +110,8 @@
     // get the options for the particular question by anyone
     function get_all_options($conn, $input){
 
-        $question = check_question($conn);
-        $question_id = $question['Id'];
-        $quiz_id = $question['quiz_id']; 
+        $question_id = $_GET['question_id'];
+        $quiz_id = $_GET['quiz_id']; 
 
         validateInput([
             "question id" => $question_id, 
@@ -148,10 +147,8 @@
 
     // get the particular option 
     function get_option($conn, $input){
-
-        // $identifier = option_input_handler($conn, $input, false);
-        $question = check_question($conn); 
-        $question_id = $question['Id'];
+        $quiz_id = $_GET['quiz_id']; 
+        $question_id = $_GET['question_id'];
         $option_id = $_GET['option_id'];
         
         validateInput([
@@ -161,8 +158,8 @@
         
         try{
 
-            $stmt = $conn->prepare('SELECT * FROM options WHERE question_id = ? AND Id = ?');
-            $stmt->execute([$question_id, $option_id]); 
+            $stmt = $conn->prepare('SELECT * FROM options WHERE quiz_id = ? AND question_id = ? AND Id = ?');
+            $stmt->execute([$quiz_id,$question_id, $option_id]); 
             $option_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if(empty($option_data)){
@@ -188,11 +185,13 @@
     
     // delete the option for the particular question by admin only
     function delete_option($conn){
-
-        // $identifier = option_input_handler($conn, $input, false);
         $question = check_question($conn);  
         $question_id = $question['Id']; 
         $option_id = $_GET['option_id']; 
+
+        validateInput([
+            "option id" => $option_id
+        ]); 
 
         try{
             // delete the option
@@ -220,7 +219,6 @@
     // delete all the options of the particualr question
     function delete_all_options($conn){
 
-        // $identifier = option_input_handler($conn, $input, false);
         $question = check_question($conn);  
         $question_id = $question['Id']; 
         

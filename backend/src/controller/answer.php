@@ -9,60 +9,10 @@
     $input = json_encode(file_get_contents('php://input'), true); 
 
 
-    // give the answers of particular question 
-    function add_answer($conn, $input ){
-
-        $submission_id = check_submission($conn)['id'];
-        $question_id = check_question($conn)['Id'];
-        $option_id = check_option($conn)['Id'];
-        $score = 0;  
-
-
-        try{
-
-            // find the option from the option id
-            $stmt = $conn->prepare('SELECT * FROM options WHERE Id = ? AND question_id = ?'); 
-            $stmt->execute([$option_id, $question_id]);
-            $option_data = $stmt->fetch(PDO::FETCH_ASSOC); 
-
-            if(empty($option_data) || $option_data === null){
-                sendResponse(400, [
-                    "status" => "error", 
-                    "message" => "option data not found"
-                ]); 
-            }
-
-            // check the option is correct or not
-            if($option_data['is_correct'] == true){
-                $score = $score + 1; 
-            }
-            else{
-                $score = $score - 1; 
-            }
-
-            // add the answer
-            $stmt = $conn->prepare('INSERT INTO answers(question_id, option_id, submission_id, score) VALUES (?, ?, ?, ?)');
-            $stmt->execute([$question_id, $option_id, $submission_id, $score]);
-            
-            
-            sendResponse(201, [
-                "status" => "success", 
-                "message" => "answer has been successfully added"
-            ]);  
-        }
-        catch(Exception $e){
-            sendResponse(500, [
-                "status" => "error", 
-                "message" => $e->getMessage()
-            ]); 
-        }
-    }
-
     // fetch the answer data 
     // this endpoint is not working 
     function get_answer($conn){
 
-        // $identifier = answer_input_handler($conn, false);
         $submission_id = check_submission($conn)['id']; 
         $answer_id = $_GET['answer_id'];
 
@@ -71,22 +21,60 @@
         ]); 
         
         try{
+            $sql = "SELECT
+                        ans.id AS answer_id, 
+                        q.id AS question_id, q.question_text,
+                        o.id AS option_id, o.option_text, o.is_correct, 
+                        ans.option_id AS selected_option_id, 
+                        ans.score,
+                        ans.submission_id
+                    FROM answers ans
+                    LEFT JOIN questions q ON ans.question_id = q.id
+                    LEFT JOIN options o ON o.question_id = q.id
+                    WHERE ans.submission_id = ? AND ans.id = ?
+                    ORDER BY q.id, o.id"; 
 
-            $stmt = $conn->prepare('SELECT * FROM answers WHERE id = ? AND submission_id = ?');
-            $stmt->execute([$answer_id, $submission_id]); 
-            $answer_data = $stmt->fetch(PDO::FETCH_ASSOC); 
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$submission_id, $answer_id]); 
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC); 
 
-            if(empty($answer_data)){
+            if(empty($data)){
                 sendResponse(400, [
                     "status" => "error", 
                     "message" => "answer not received"
                 ]); 
             }
 
+            $result = []; 
+
+            foreach($data as $row){  // ✅ fixed $rows -> $data
+                $qid = $row['question_id']; 
+
+                if(!isset($result[$qid])){
+                    $result[$qid] = [
+                        'answer id' => $row['answer_id'],
+                        'question id' => $row['question_id'],
+                        'question text' => $row['question_text'], 
+                        'options' => [], 
+                        'selected_option' => $row['selected_option_id'],
+                        'score' => $row['score'],
+                        'submission_id' => $row['submission_id']
+                    ];
+                }
+
+                $result[$qid]['options'][] = [
+                    'option_id' => $row['option_id'],
+                    'option_text' => $row['option_text'],
+                    'is_correct' => $row['is_correct']
+                ]; 
+            }
+
+            $result = array_values($result); 
+
             sendResponse(200, [
                 "status" => "success", 
                 "message" => "answer received successfully", 
-                "data" => $answer_data
+                "data" => $result
             ]); 
         }
         catch(Exception $e){
@@ -97,7 +85,7 @@
         }
     }
 
-
+    
     // get all the answers of the particular submission with questions;
     // response: - question_id :- ?  and  answer_id = ?  then your score = ? 
     function get_all_answers($conn){

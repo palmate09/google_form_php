@@ -33,7 +33,6 @@
     // create the quiz
     // url:- /quiz/new_quiz 
     function newQuiz($conn, $input){
-        
         try{
             $auth    = authmiddlware(); 
             $adminId = $auth['sub']; 

@@ -24,7 +24,6 @@ create table quizzes(
     created_at      TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY     (creator_id)    REFERENCES users(userId),
     FOREIGN KEY     (user_id)       REFERENCES users(userId)
-
 );
 
 create table questions(

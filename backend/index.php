@@ -7,6 +7,7 @@
     require __DIR__ . '/src/controller/submission.php';
     require __DIR__ . '/src/controller/answer.php';  
     require __DIR__ . '/src/controller/result.php'; 
+    require __DIR__ . '/src/controller/response.php'; 
 
 
     $method = $_SERVER["REQUEST_METHOD"];
@@ -46,6 +47,9 @@
     }
     else if($method === 'PUT' && $path === '/quiz/update_quiz'){
         updateQuiz($conn, $input); 
+    }
+    else if($method === 'GET' && $path === '/quiz/showQuiz'){
+        showQuiz($conn, $input); 
     }
     else if($method === 'GET' && $path === '/quiz/get_all_quizzes'){
         getAllQuizzes($conn); 
@@ -92,8 +96,8 @@
     else if($method === 'DELETE' && $path === '/option/delete_all_options'){
         delete_all_options($conn); 
     }
-    else if($method === 'POST' && $path === '/submissions/add_submission'){
-        add_submission($conn); 
+    else if($method === 'POST' && $path === '/response/addResponse'){
+        addResponse($conn, $input); 
     }
     else if($method === 'GET' && $path === '/submissions/get_submission'){
         get_submission($conn); 
@@ -109,9 +113,6 @@
     }
     else if($method === 'GET' && $path === '/answers/get_all_answers'){
         get_all_answers($conn); 
-    }
-    else if($method === 'POST' && $path === '/result/add_result'){
-        add_result($conn); 
     }
     else if($method === 'GET' && $path === '/result/show_result'){
         show_result($conn); 
