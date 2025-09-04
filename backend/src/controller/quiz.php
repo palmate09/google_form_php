@@ -172,7 +172,7 @@
 
         validateInput([
             "admin id" => $adminId
-        ]); 
+        ]); //shall also validate all type of validations, eg. numbers, boolean, text, etc
 
         try{
 

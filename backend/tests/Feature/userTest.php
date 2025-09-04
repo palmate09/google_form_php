@@ -156,14 +156,14 @@
         expect($body['message'])->toBe('Email sent successfully');
     });
 
-    // --- Forgot password Tests --- 
+    // --- Forgot password Tests ---
 
     test('POST /updating the password after the request sent to email', function(){
 
         $client = getClient(); 
 
-        $client->post('/register', ['json' => ['username' => 'shubham', 'email' => 'palmateshubham559@gmail.com', 'password' => 'password1234']]);
-        $response = $client->post('/password_resets', ['json' => ['email' => 'palmateshubham559@gmail.com']]);
+        $client->post('/register', ['json' => ['username' => 'shubham', 'email' => 'palmate@example.com', 'password' => 'password1234']]);
+        $response = $client->post('/password_resets', ['json' => ['email' => 'palmate@example.com']]);
         $newResponse = json_decode($response->getBody()->getContents(), true); 
         $newBody = $newResponse['token']; 
         

@@ -201,7 +201,7 @@
             exit; 
         }
 
-        $mail = new PHPMailer(true); 
+        $mail = new PHPMailer(); 
 
         try{
 
@@ -226,12 +226,12 @@
 
             //server settings
             $mail->isSMTP(); 
-            $mail->Host        = 'smtp.gmail.com';
+            $mail->Host        = 'sandbox.smtp.mailtrap.io';
             $mail->SMTPAuth    = true; 
             $mail->Username    = $_ENV['MAIL_USERNAME']; 
             $mail->Password    = $_ENV['MAIL_PASS']; 
             $mail->SMTPSecure  = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port        = 587; 
+            $mail->Port        = 2525; 
             // use mailtrap for email testings
 
             // Recipients
